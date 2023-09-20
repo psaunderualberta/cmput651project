@@ -1,0 +1,29 @@
+// binaries
+plus    = { "+" }
+div     = { "/" }
+mul     = { "*" }
+minus   = { "-" }
+max     = { "max" }
+min     = { "min" }
+binary  = { plus | div | mul | minus | max | min }
+
+// unaries
+neg     = { "neg" }
+abs     = { "abs" }
+sqrt    = { "sqrt" }
+sqr     = { "sqr" }
+unary   = { neg | abs | sqrt | sqr }
+
+// terminals
+x1          = { "x1" }
+x2          = { "x2" }
+y1          = { "y1" }
+y2          = { "y2" }
+deltaX      = { "deltaX" }
+deltaY      = { "deltaY" }
+terminal    = { x1 | x2 | y1 | y2 | deltaX | deltaY }
+
+heuristic = {   ("( " ~ binary ~ " " ~ heuristic ~ " " ~ heuristic ~ " )") | 
+                ("( " ~ unary ~ " " ~ heuristic ~ " )") |
+                terminal
+}

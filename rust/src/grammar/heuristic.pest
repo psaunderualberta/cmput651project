@@ -1,7 +1,0 @@
-binary = { "+" | "/" | "*" | "-" | "max" | "min" }
-unary = { "neg" | "abs" | "sqrt" | "sqr" }
-terminal = { "x1" | "x2" | "y1" | "y2" | "deltaX" | "deltaY" }
-heuristic = {   ("( " ~ binary ~ " " ~ heuristic ~ " " ~ heuristic ~ " )") | 
-                ("( " ~ unary ~ " " ~ heuristic ~ " )") |
-                terminal
-}
