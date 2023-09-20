@@ -3,7 +3,7 @@ use pest::iterators::Pairs;
 use pest_derive::Parser;
 
 #[derive(Parser)]
-#[grammar = "heuristic/heuristic.pest"]
+#[grammar = "heuristic/grammar/heuristic.pest"]
 struct HeuristicParser;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
