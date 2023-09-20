@@ -81,3 +81,73 @@ fn random_binary(hsize: i32) -> Heuristic {
 // TODO: Write tests for heuristic_size
 
 // TODO: Write tests for heuristic_depth
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Tests for heuristic size
+    #[test]
+    fn test_heuristic_size_1() {
+        let h1 = Heuristic::Terminal(Rule::x1);
+        assert_eq!(heuristic_size(&h1), 1);
+    }
+
+    #[test]
+    fn test_heuristic_size_2() {
+        let h2 = Heuristic::Unary(Rule::neg, Box::new(Heuristic::Terminal(Rule::x1)));
+        assert_eq!(heuristic_size(&h2), 2);
+    }
+
+    #[test]
+    fn test_heuristic_size_3() {
+        let h3 = Heuristic::Binary(
+            Rule::plus,
+            Box::new(
+                Heuristic::Unary(
+                    Rule::abs,
+                    Box::new(
+                        Heuristic::Terminal(Rule::deltaX)
+                    )
+                )
+            ),
+            Box::new(
+                Heuristic::Terminal(Rule::deltaY)
+            )
+        );
+        assert_eq!(heuristic_size(&h3), 4);
+    }
+
+    // Tests for heuristic depth
+    #[test]
+    fn test_heuristic_depth_1() {
+        let h1 = Heuristic::Terminal(Rule::x1);
+        assert_eq!(heuristic_depth(&h1), 1);
+    }
+
+    #[test]
+    fn test_heuristic_depth_2() {
+        let h2 = Heuristic::Unary(Rule::neg, Box::new(Heuristic::Terminal(Rule::x1)));
+        assert_eq!(heuristic_depth(&h2), 2);
+    }
+
+    #[test]
+    fn test_heuristic_depth_3() {
+        let h3 = Heuristic::Binary(
+            Rule::plus,
+            Box::new(
+                Heuristic::Unary(
+                    Rule::abs,
+                    Box::new(
+                        Heuristic::Terminal(Rule::deltaX)
+                    )
+                )
+            ),
+            Box::new(
+                Heuristic::Terminal(Rule::deltaY)
+            )
+        );
+        assert_eq!(heuristic_depth(&h3), 3);
+    }
+
+}
