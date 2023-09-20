@@ -149,5 +149,4 @@ mod tests {
         );
         assert_eq!(heuristic_depth(&h3), 3);
     }
-
 }
