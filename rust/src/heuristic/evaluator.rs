@@ -1,65 +1,96 @@
-use num_complex::{Complex, ComplexFloat};
-use crate::heuristic::parser::Rule;
 use crate::heuristic::parser::Heuristic;
+use crate::heuristic::parser::Rule;
+use num_complex::{Complex, ComplexFloat};
 
 pub fn evaluate_heuristic(heuristic: &Heuristic, x: i32, y: i32, xg: i32, yg: i32) -> f32 {
-
-    let x_c     = Complex::new(x as f32, 0.0);
-    let xg_c    = Complex::new(xg as f32, 0.0);
-    let y_c     = Complex::new(y as f32, 0.0);
-    let yg_c    = Complex::new(yg as f32, 0.0);
+    let x_c = Complex::new(x as f32, 0.0);
+    let xg_c = Complex::new(xg as f32, 0.0);
+    let y_c = Complex::new(y as f32, 0.0);
+    let yg_c = Complex::new(yg as f32, 0.0);
 
     evaluate_heuristic_complex(heuristic, x_c, y_c, xg_c, yg_c).re()
 }
 
-fn evaluate_heuristic_complex(heuristic: &Heuristic, x: Complex<f32>, y: Complex<f32>, xg: Complex<f32>, yg: Complex<f32>) -> Complex<f32> {
+fn evaluate_heuristic_complex(
+    heuristic: &Heuristic,
+    x: Complex<f32>,
+    y: Complex<f32>,
+    xg: Complex<f32>,
+    yg: Complex<f32>,
+) -> Complex<f32> {
     match heuristic {
         Heuristic::Terminal(rule) => evaluate_terminal(*rule, x, y, xg, yg),
         Heuristic::Unary(rule, h) => evaluate_unary(*rule, h, x, y, xg, yg),
-        Heuristic::Binary(rule, h1, h2) => evaluate_binary(*rule, h1, h2, x, y, xg, yg)
+        Heuristic::Binary(rule, h1, h2) => evaluate_binary(*rule, h1, h2, x, y, xg, yg),
     }
 }
 
 // Evaluate terminal nodes
-fn evaluate_terminal(rule: Rule, x: Complex<f32>, y: Complex<f32>, xg: Complex<f32>, yg: Complex<f32>) -> Complex<f32> {
+fn evaluate_terminal(
+    rule: Rule,
+    x: Complex<f32>,
+    y: Complex<f32>,
+    xg: Complex<f32>,
+    yg: Complex<f32>,
+) -> Complex<f32> {
     match rule {
-        Rule::x1        => x,
-        Rule::y1        => y,
-        Rule::x2        => xg,
-        Rule::y2        => yg,
-        Rule::deltaX    => Complex::new((x - xg).norm(), 0.0),
-        Rule::deltaY    => Complex::new((y - yg).norm(), 0.0),
-        _ => { unreachable!() }
+        Rule::x1 => x,
+        Rule::y1 => y,
+        Rule::x2 => xg,
+        Rule::y2 => yg,
+        Rule::deltaX => Complex::new((x - xg).norm(), 0.0),
+        Rule::deltaY => Complex::new((y - yg).norm(), 0.0),
+        _ => {
+            unreachable!()
+        }
     }
 }
 
 // Evaluate unary operators
-fn evaluate_unary(rule: Rule, h: &Heuristic, x: Complex<f32>, y: Complex<f32>, xg: Complex<f32>, yg: Complex<f32>) -> Complex<f32> {
+fn evaluate_unary(
+    rule: Rule,
+    h: &Heuristic,
+    x: Complex<f32>,
+    y: Complex<f32>,
+    xg: Complex<f32>,
+    yg: Complex<f32>,
+) -> Complex<f32> {
     let result = evaluate_heuristic_complex(h, x, y, xg, yg);
     match rule {
-        Rule::neg   => -result,
-        Rule::abs   => Complex::new(result.abs(), 0.0),
-        Rule::sqrt  => result.sqrt(),
-        Rule::sqr   => result.powi(2),
-        _ => { unreachable!() }
+        Rule::neg => -result,
+        Rule::abs => Complex::new(result.abs(), 0.0),
+        Rule::sqrt => result.sqrt(),
+        Rule::sqr => result.powi(2),
+        _ => {
+            unreachable!()
+        }
     }
 }
 
 // Evaluate binary operators
-fn evaluate_binary(rule: Rule, h1: &Heuristic, h2: &Heuristic, x: Complex<f32>, y: Complex<f32>, xg: Complex<f32>, yg: Complex<f32>) -> Complex<f32> {
+fn evaluate_binary(
+    rule: Rule,
+    h1: &Heuristic,
+    h2: &Heuristic,
+    x: Complex<f32>,
+    y: Complex<f32>,
+    xg: Complex<f32>,
+    yg: Complex<f32>,
+) -> Complex<f32> {
     let result1 = evaluate_heuristic_complex(h1, x, y, xg, yg);
     let result2 = evaluate_heuristic_complex(h2, x, y, xg, yg);
     match rule {
-        Rule::plus  => result1 + result2,
+        Rule::plus => result1 + result2,
         Rule::minus => result1 - result2,
-        Rule::mul   => result1 * result2,
-        Rule::div   => result1 / result2,
-        Rule::max   => Complex::new(result1.norm().max(result2.norm()), 0.0),
-        Rule::min   => Complex::new(result1.norm().max(result2.norm()), 0.0),
-        _ => { unreachable!() }
+        Rule::mul => result1 * result2,
+        Rule::div => result1 / result2,
+        Rule::max => Complex::new(result1.norm().max(result2.norm()), 0.0),
+        Rule::min => Complex::new(result1.norm().max(result2.norm()), 0.0),
+        _ => {
+            unreachable!()
+        }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

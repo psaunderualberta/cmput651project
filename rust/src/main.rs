@@ -13,7 +13,7 @@ fn main() {
     let mut h = parse_heuristic("(+ deltaX deltaY)");
     for _ in 0..1000 {
         h = mutate_heuristic(&h);
-        // println!("{}", h);
-        // println!("{:?}", heuristic::util::heuristic_size(&h));
+        println!("{}", h);
+        println!("{:?}", heuristic::util::heuristic_size(&h));
     }
 }

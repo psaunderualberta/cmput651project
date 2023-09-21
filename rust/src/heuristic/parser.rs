@@ -1,5 +1,5 @@
-use pest::Parser;
 use pest::iterators::Pairs;
+use pest::Parser;
 use pest_derive::Parser;
 use std::fmt::Display;
 
@@ -11,7 +11,7 @@ struct HeuristicParser;
 pub enum Heuristic {
     Terminal(Rule),
     Unary(Rule, Box<Heuristic>),
-    Binary(Rule, Box<Heuristic>, Box<Heuristic>)
+    Binary(Rule, Box<Heuristic>, Box<Heuristic>),
 }
 
 // Pretty printing for heuristics
@@ -20,7 +20,7 @@ impl Display for Heuristic {
         match self {
             Heuristic::Terminal(rule) => write!(f, "{:?}", rule),
             Heuristic::Unary(rule, h) => write!(f, "({:?} {})", rule, h),
-            Heuristic::Binary(rule, h1, h2) => write!(f, "({:?} {} {})", rule, h1, h2)
+            Heuristic::Binary(rule, h1, h2) => write!(f, "({:?} {} {})", rule, h1, h2),
         }
     }
 }
@@ -38,14 +38,16 @@ fn pairs2struct(result: Pairs<Rule>) -> Heuristic {
         Rule::binary => Heuristic::Binary(
             operator.into_inner().next().unwrap().as_rule(),
             Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
-            Box::new(pairs2struct(Pairs::single(pairs.next().unwrap())))
+            Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
         ),
         Rule::unary => Heuristic::Unary(
             operator.into_inner().next().unwrap().as_rule(),
-            Box::new(pairs2struct(Pairs::single(pairs.next().unwrap())))
+            Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
         ),
         Rule::terminal => Heuristic::Terminal(operator.into_inner().next().unwrap().as_rule()),
-        other => { unreachable!("{:?}", other) }
+        other => {
+            unreachable!("{:?}", other)
+        }
     }
 }
 
@@ -56,15 +58,12 @@ mod tests {
     #[test]
     fn test_parse_success_1() {
         let h1 = parse_heuristic("(+ deltaX deltaY)");
-        assert_eq!(h1,
+        assert_eq!(
+            h1,
             Heuristic::Binary(
-                Rule::plus, 
-                Box::new(
-                    Heuristic::Terminal(Rule::deltaX)
-                ),
-                Box::new(
-                    Heuristic::Terminal(Rule::deltaY)
-                )
+                Rule::plus,
+                Box::new(Heuristic::Terminal(Rule::deltaX)),
+                Box::new(Heuristic::Terminal(Rule::deltaY))
             )
         );
     }
@@ -72,28 +71,19 @@ mod tests {
     #[test]
     fn test_parse_success_2() {
         let h2 = parse_heuristic("(/ (max deltaX deltaY) (abs x1))");
-        assert_eq!(h2,
+        assert_eq!(
+            h2,
             Heuristic::Binary(
-                Rule::div, 
-                Box::new(
-                    Heuristic::Binary(
-                        Rule::max, 
-                        Box::new(
-                            Heuristic::Terminal(Rule::deltaX)
-                        ),
-                        Box::new(
-                            Heuristic::Terminal(Rule::deltaY)
-                        )
-                    )
-                ),
-                Box::new(
-                    Heuristic::Unary(
-                        Rule::abs, 
-                        Box::new(
-                            Heuristic::Terminal(Rule::x1)
-                        )
-                    )
-                )
+                Rule::div,
+                Box::new(Heuristic::Binary(
+                    Rule::max,
+                    Box::new(Heuristic::Terminal(Rule::deltaX)),
+                    Box::new(Heuristic::Terminal(Rule::deltaY))
+                )),
+                Box::new(Heuristic::Unary(
+                    Rule::abs,
+                    Box::new(Heuristic::Terminal(Rule::x1))
+                ))
             )
         );
     }
