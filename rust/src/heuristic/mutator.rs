@@ -28,7 +28,6 @@ fn mutate_heuristic_helper(
     // Mutation probability of 1 / hsize
     // => Mutate iff X ~ Unif[0, 1] <= 1 / hsize
 
-    // TODO: THIS DOESN"T WORK LOL
     match mut_prob >= fastrand::f32() {
         true => (random_heuristic(new_tree_size), true),
         false => match heuristic {

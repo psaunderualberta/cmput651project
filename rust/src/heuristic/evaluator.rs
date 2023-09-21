@@ -41,7 +41,7 @@ fn evaluate_terminal(
         Rule::deltaX => Complex::new((x - xg).norm(), 0.0),
         Rule::deltaY => Complex::new((y - yg).norm(), 0.0),
         _ => {
-            unreachable!()
+            unreachable!("{:?}", rule);
         }
     }
 }
@@ -62,7 +62,7 @@ fn evaluate_unary(
         Rule::sqrt => result.sqrt(),
         Rule::sqr => result.powi(2),
         _ => {
-            unreachable!()
+            unreachable!("{:?}", rule);
         }
     }
 }
@@ -84,10 +84,12 @@ fn evaluate_binary(
         Rule::minus => result1 - result2,
         Rule::mul => result1 * result2,
         Rule::div => result1 / result2,
+
+        // TODO: Correct implementtion
         Rule::max => Complex::new(result1.norm().max(result2.norm()), 0.0),
         Rule::min => Complex::new(result1.norm().max(result2.norm()), 0.0),
         _ => {
-            unreachable!()
+            unreachable!("{:?}", rule);
         }
     }
 }
