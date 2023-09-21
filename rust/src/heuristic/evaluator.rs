@@ -1,5 +1,6 @@
 use num_complex::{Complex, ComplexFloat};
-use crate::heuristic::parser::{Heuristic, Rule};
+use crate::heuristic::parser::Rule;
+use crate::heuristic::parser::Heuristic;
 
 pub fn evaluate_heuristic(heuristic: &Heuristic, x: i32, y: i32, xg: i32, yg: i32) -> f32 {
 

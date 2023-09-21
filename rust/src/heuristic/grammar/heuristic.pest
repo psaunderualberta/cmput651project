@@ -23,7 +23,7 @@ deltaX      = { "deltaX" }
 deltaY      = { "deltaY" }
 terminal    = { x1 | x2 | y1 | y2 | deltaX | deltaY }
 
-heuristic = {   ("( " ~ binary ~ " " ~ heuristic ~ " " ~ heuristic ~ " )") | 
-                ("( " ~ unary ~ " " ~ heuristic ~ " )") |
+heuristic = {   ("(" ~ binary ~ " " ~ heuristic ~ " " ~ heuristic ~ ")") | 
+                ("(" ~ unary ~ " " ~ heuristic ~ ")") |
                 terminal
 }

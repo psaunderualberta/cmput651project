@@ -68,12 +68,12 @@ fn random_binary(hsize: i32) -> Heuristic {
     let right_subtree_size = hsize - left_subtree_size - 1;
 
     match fastrand::u32(0..=5) {
-        0 => Heuristic::Binary(Rule::x1, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
-        1 => Heuristic::Binary(Rule::x2, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
-        2 => Heuristic::Binary(Rule::y1, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
-        3 => Heuristic::Binary(Rule::y2, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
-        4 => Heuristic::Binary(Rule::deltaX, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
-        5 => Heuristic::Binary(Rule::deltaY, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
+        0 => Heuristic::Binary(Rule::plus, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
+        1 => Heuristic::Binary(Rule::div, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
+        2 => Heuristic::Binary(Rule::mul, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
+        3 => Heuristic::Binary(Rule::minus, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
+        4 => Heuristic::Binary(Rule::max, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
+        5 => Heuristic::Binary(Rule::min, Box::new(random_heuristic(left_subtree_size)), Box::new(random_heuristic(right_subtree_size))),
         _ => { unreachable!() }
     }
 }
