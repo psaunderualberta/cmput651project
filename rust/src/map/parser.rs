@@ -38,3 +38,5 @@ pub fn parse_map_file(mapfile: &str) -> Map {
 
     Map::from(n, m, map)
 }
+
+// TODO: Write function to parse map from string. Makes it easier to test.

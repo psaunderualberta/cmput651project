@@ -9,7 +9,6 @@ impl Maps {
     pub fn value(&self) -> &str {
         match *self {
             Maps::Den009d => "./src/map/data/den009d.map",
-            _ => { unreachable!() }
         }
     }
 }
@@ -64,6 +63,7 @@ impl Map {
                 neighbours[i].push(i - m as usize);
             }
 
+            // Can go down
             if ii32 < (n - 1) * m {
                 neighbours[i].push(i + m as usize);
             }
