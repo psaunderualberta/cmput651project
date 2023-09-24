@@ -27,19 +27,17 @@ pub enum Tile {
 }
 
 pub struct Map {
-    pub n: i32,
-    pub m: i32,
+    pub n: usize,
+    pub m: usize,
     pub map: Vec<Tile>,
     pub neighbours: Vec<Vec<usize>>,
 }
 
 impl Map {
-    pub fn from(n: i32, m: i32, map: Vec<Tile>) -> Map {
+    pub fn from(n: usize, m: usize, map: Vec<Tile>) -> Map {
         let mut neighbours: Vec<Vec<usize>> = Vec::new();
 
         for i in 0..map.len() {
-            let ii32 = i as i32;
-
             // Add a new level
             neighbours.push(Vec::new());
             
@@ -49,22 +47,22 @@ impl Map {
             }
 
             // Can go left
-            if ii32 % n != 0 && map[i - 1] == Tile::Passable {
+            if i % n != 0 && map[i - 1] == Tile::Passable {
                 neighbours[i].push(i - 1);
             }
 
             // Can go right
-            if (ii32 + 1) % n != 0 && map[i + 1] == Tile::Passable {
+            if (i + 1) % n != 0 && map[i + 1] == Tile::Passable {
                 neighbours[i].push(i + 1);
             }
 
             // Can go up
-            if ii32 >= m && map[i - m as usize] == Tile::Passable {
+            if i >= m && map[i - m as usize] == Tile::Passable {
                 neighbours[i].push(i - m as usize);
             }
 
             // Can go down
-            if ii32 < (n - 1) * m && map[i + m as usize] == Tile::Passable {
+            if i < (n - 1) * m && map[i + m as usize] == Tile::Passable {
                 neighbours[i].push(i + m as usize);
             }
         }
@@ -72,11 +70,11 @@ impl Map {
         Map { n, m, map, neighbours }
     }
 
-    pub fn ind2sub(&self, pos: i32) -> (i32, i32) {
+    pub fn ind2sub(&self, pos: usize) -> (usize, usize) {
         (pos / self.n, pos % self.m)
     }
 
-    pub fn get_neighbours(&self, pos: i32) -> &Vec<usize> {
+    pub fn get_neighbours(&self, pos: usize) -> &Vec<usize> {
         &self.neighbours[pos as usize]
     }
 }
@@ -93,7 +91,7 @@ impl Display for Map {
                 Tile::Unpassable => "1 ",
             });
 
-            if (i as i32) % self.m == 0 {
+            if i % self.m == 0 {
                 result.push('\n');
             }
         }

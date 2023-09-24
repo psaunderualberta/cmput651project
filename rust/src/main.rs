@@ -1,8 +1,7 @@
 mod constants;
 mod heuristic;
 mod map;
-
-use map::util::Map;
+mod alife;
 
 use crate::heuristic::mutator::mutate_heuristic;
 use crate::heuristic::parser::parse_heuristic;

@@ -26,8 +26,8 @@ fn parse_map_string(mapstring: &str) -> Map {
     assert_eq!(lines[3], "map");
 
     // Extract size of the map
-    let n = lines[1][7..lines[1].len()].parse::<i32>().unwrap();
-    let m = lines[2][6..lines[2].len()].parse::<i32>().unwrap();
+    let n = lines[1][7..lines[1].len()].parse::<usize>().unwrap();
+    let m = lines[2][6..lines[2].len()].parse::<usize>().unwrap();
     let mut map: Vec<Tile> = Vec::new();
 
     // Extract individual tiles from map
