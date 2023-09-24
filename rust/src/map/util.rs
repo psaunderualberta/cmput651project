@@ -20,7 +20,7 @@ impl Maps {
 // T - trees (unpassable)
 // S - swamp (passable from regular terrain)
 // W - water (traversable, but not passable from terrain)
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Tile {
     Passable,
     Unpassable
@@ -49,22 +49,22 @@ impl Map {
             }
 
             // Can go left
-            if ii32 % n != 0 {
+            if ii32 % n != 0 && map[i - 1] == Tile::Passable {
                 neighbours[i].push(i - 1);
             }
 
             // Can go right
-            if (ii32 + 1) % n != 0 {
+            if (ii32 + 1) % n != 0 && map[i + 1] == Tile::Passable {
                 neighbours[i].push(i + 1);
             }
 
             // Can go up
-            if ii32 >= m {
+            if ii32 >= m && map[i - m as usize] == Tile::Passable {
                 neighbours[i].push(i - m as usize);
             }
 
             // Can go down
-            if ii32 < (n - 1) * m {
+            if ii32 < (n - 1) * m && map[i + m as usize] == Tile::Passable {
                 neighbours[i].push(i + m as usize);
             }
         }
