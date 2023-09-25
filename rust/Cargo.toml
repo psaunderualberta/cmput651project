@@ -10,7 +10,13 @@ pest = "2.6"
 pest_derive = "2.6"
 fastrand = "2.0.0"
 num-complex = "0.4"
+anyhow = "1.0"
+inkwell = { git = "https://github.com/TheDan64/inkwell", branch = "master", features = [
+    "llvm16-0",
+] }
+colored = "2"
+test-case = "3.2.1"
 
 [profile.dev]
-opt-level = 0               # Optimization level
-overflow-checks = true     # Disable integer overflow checks.
+opt-level = 0          # Optimization level
+overflow-checks = true # Disable integer overflow checks.

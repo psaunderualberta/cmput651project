@@ -3,9 +3,9 @@ use std::cmp::Ordering;
 #[derive(Clone, Debug)]
 pub struct State {
     pub position: usize,
-    pub g: i32,
-    pub h: i32,
-    pub f: i32,
+    pub g: f32,
+    pub h: f32,
+    pub f: f32,
 }
 
 impl PartialEq for State {
@@ -17,20 +17,24 @@ impl PartialEq for State {
 impl Eq for State {}
 
 impl State {
-    pub fn new(position: usize, g: i32, h: i32) -> State {
-        State { position, g, h, f: g + h }
+    pub fn new(position: usize, g: f32, h: f32) -> State {
+        State {
+            position,
+            g,
+            h,
+            f: g + h,
+        }
     }
 }
 
 // Implemented for min-heaps
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        // First test 'f' value
-        // Then test 'g' value
-        // Then test position (tie-breaker, guranteed to work).
-        (other.f).cmp(&self.f)
-            .then_with(|| other.g.cmp(&self.g))
-            .then_with(|| self.position.cmp(&other.position))
+        if self.f < other.f {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        }
     }
 }
 

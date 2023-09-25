@@ -8,43 +8,43 @@ use std::fmt::Display;
 struct HeuristicParser;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Heuristic {
+pub enum HeuristicNode {
     Terminal(Rule),
-    Unary(Rule, Box<Heuristic>),
-    Binary(Rule, Box<Heuristic>, Box<Heuristic>),
+    Unary(Rule, Box<HeuristicNode>),
+    Binary(Rule, Box<HeuristicNode>, Box<HeuristicNode>),
 }
 
 // Pretty printing for heuristics
-impl Display for Heuristic {
+impl Display for HeuristicNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Heuristic::Terminal(rule) => write!(f, "{:?}", rule),
-            Heuristic::Unary(rule, h) => write!(f, "({:?} {})", rule, h),
-            Heuristic::Binary(rule, h1, h2) => write!(f, "({:?} {} {})", rule, h1, h2),
+            HeuristicNode::Terminal(rule) => write!(f, "{:?}", rule),
+            HeuristicNode::Unary(rule, h) => write!(f, "({:?} {})", rule, h),
+            HeuristicNode::Binary(rule, h1, h2) => write!(f, "({:?} {} {})", rule, h1, h2),
         }
     }
 }
 
-pub fn parse_heuristic(input: &str) -> Heuristic {
+pub fn parse_heuristic(input: &str) -> HeuristicNode {
     let result = HeuristicParser::parse(Rule::heuristic, input).unwrap_or_else(|e| panic!("{}", e));
     pairs2struct(result)
 }
 
-fn pairs2struct(result: Pairs<Rule>) -> Heuristic {
+fn pairs2struct(result: Pairs<Rule>) -> HeuristicNode {
     let mut pairs = result.peek().unwrap().into_inner();
     let operator = pairs.next().unwrap();
 
     match operator.as_rule() {
-        Rule::binary => Heuristic::Binary(
+        Rule::binary => HeuristicNode::Binary(
             operator.into_inner().next().unwrap().as_rule(),
             Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
             Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
         ),
-        Rule::unary => Heuristic::Unary(
+        Rule::unary => HeuristicNode::Unary(
             operator.into_inner().next().unwrap().as_rule(),
             Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
         ),
-        Rule::terminal => Heuristic::Terminal(operator.into_inner().next().unwrap().as_rule()),
+        Rule::terminal => HeuristicNode::Terminal(operator.into_inner().next().unwrap().as_rule()),
         other => {
             unreachable!("{:?}", other)
         }
@@ -60,10 +60,10 @@ mod tests {
         let h1 = parse_heuristic("(+ deltaX deltaY)");
         assert_eq!(
             h1,
-            Heuristic::Binary(
+            HeuristicNode::Binary(
                 Rule::plus,
-                Box::new(Heuristic::Terminal(Rule::deltaX)),
-                Box::new(Heuristic::Terminal(Rule::deltaY))
+                Box::new(HeuristicNode::Terminal(Rule::deltaX)),
+                Box::new(HeuristicNode::Terminal(Rule::deltaY))
             )
         );
     }
@@ -73,16 +73,16 @@ mod tests {
         let h2 = parse_heuristic("(/ (max deltaX deltaY) (abs x1))");
         assert_eq!(
             h2,
-            Heuristic::Binary(
+            HeuristicNode::Binary(
                 Rule::div,
-                Box::new(Heuristic::Binary(
+                Box::new(HeuristicNode::Binary(
                     Rule::max,
-                    Box::new(Heuristic::Terminal(Rule::deltaX)),
-                    Box::new(Heuristic::Terminal(Rule::deltaY))
+                    Box::new(HeuristicNode::Terminal(Rule::deltaX)),
+                    Box::new(HeuristicNode::Terminal(Rule::deltaY))
                 )),
-                Box::new(Heuristic::Unary(
+                Box::new(HeuristicNode::Unary(
                     Rule::abs,
-                    Box::new(Heuristic::Terminal(Rule::x1))
+                    Box::new(HeuristicNode::Terminal(Rule::x1))
                 ))
             )
         );

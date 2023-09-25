@@ -25,7 +25,7 @@ impl Maps {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Tile {
     Passable,
-    Unpassable
+    Unpassable,
 }
 
 pub struct Map {
@@ -42,7 +42,7 @@ impl Map {
         for i in 0..map.len() {
             // Add a new level
             neighbours.push(Vec::new());
-            
+
             // Only add neighbours if traversable
             if map[i] == Tile::Unpassable {
                 continue;
@@ -69,11 +69,16 @@ impl Map {
             }
         }
 
-        Map { n, m, map, neighbours }
+        Map {
+            n,
+            m,
+            map,
+            neighbours,
+        }
     }
 
     pub fn ind2sub(&self, pos: usize) -> (usize, usize) {
-        (pos / self.n, pos % self.m)
+        (pos / self.n, pos % self.n)
     }
 
     pub fn sub2ind(&self, x: usize, y: usize) -> usize {

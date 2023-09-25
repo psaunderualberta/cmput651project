@@ -1,30 +1,38 @@
+mod alife;
 mod constants;
 mod heuristic;
 mod map;
-mod alife;
 
+use alife::search::problem::Problem;
 use heuristic::mutator::mutate_heuristic;
 use heuristic::parser::parse_heuristic;
 use heuristic::util::{heuristic_size, random_heuristic};
 use map::parser::parse_map_file;
 use map::util::Maps;
-use alife::search::problem::Problem;
 
 fn main() {
-    let choice = 2;
+    let choice = 3;
 
     match choice {
         0 => heuristic_demo(),
         1 => map_demo(),
         2 => search_demo(),
-        _ => { unreachable!(); }
+        3 => benchmark(),
+        _ => {
+            unreachable!();
+        }
     }
 }
 
 fn heuristic_demo() {
     println!("{:?}", parse_heuristic("(+ deltaX deltaY)"));
-    println!("{:?}", parse_heuristic("(min (* (* deltaY (abs y2)) (abs (max y2 deltaY))) \
-                                        (min x1 (neg (abs (abs (neg (sqrt (sqr x2))))))))"));
+    println!(
+        "{:?}",
+        parse_heuristic(
+            "(min (* (* deltaY (abs y2)) (abs (max y2 deltaY))) \
+                                        (min x1 (neg (abs (abs (neg (sqrt (sqr x2))))))))"
+        )
+    );
     println!("{:?}", random_heuristic(2));
 
     let mut h = parse_heuristic("(+ deltaX deltaY)");
@@ -36,7 +44,7 @@ fn heuristic_demo() {
 }
 
 fn map_demo() {
-    let map  = parse_map_file(Maps::Den009d.value());
+    let map = parse_map_file(Maps::Den009d.value());
     println!("{}", map);
 }
 
@@ -58,7 +66,28 @@ fn search_demo() {
     let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
     let (solved, complete) = problem.solve();
 
-    assert_eq!(solved, true);
-    assert_eq!(complete, true);
+    assert!(solved);
+    assert!(complete);
     problem.print_path_on_map();
+}
+
+fn benchmark() {
+    let map = parse_map_file(Maps::Den312d.value());
+    let h =
+        parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
+
+    let start_pos = map.sub2ind(58, 2);
+    let goal_pos = map.sub2ind(45, 62);
+
+    println!("Start: {:?}", map.ind2sub(start_pos));
+    println!("Goal: {:?}", map.ind2sub(goal_pos));
+
+    let (mut solved, mut complete) = (false, false);
+    for _ in 0..10000 {
+        let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
+        (solved, complete) = problem.solve();
+    }
+
+    assert!(solved);
+    assert!(complete);
 }

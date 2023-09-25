@@ -1,24 +1,26 @@
-use super::parser::Heuristic;
+use super::parser::HeuristicNode;
 use crate::heuristic::parser::Rule;
 use std::cmp::*;
 
-pub fn heuristic_size(heuristic: &Heuristic) -> i32 {
+pub fn heuristic_size(heuristic: &HeuristicNode) -> i32 {
     match heuristic {
-        Heuristic::Terminal(_) => 1,
-        Heuristic::Unary(_, heuristic) => 1 + heuristic_size(heuristic),
-        Heuristic::Binary(_, left, right) => 1 + heuristic_size(left) + heuristic_size(right),
+        HeuristicNode::Terminal(_) => 1,
+        HeuristicNode::Unary(_, heuristic) => 1 + heuristic_size(heuristic),
+        HeuristicNode::Binary(_, left, right) => 1 + heuristic_size(left) + heuristic_size(right),
     }
 }
 
-pub fn heuristic_depth(heuristic: &Heuristic) -> i32 {
+pub fn heuristic_depth(heuristic: &HeuristicNode) -> i32 {
     match heuristic {
-        Heuristic::Terminal(_) => 1,
-        Heuristic::Unary(_, heuristic) => 1 + heuristic_depth(heuristic),
-        Heuristic::Binary(_, left, right) => 1 + max(heuristic_depth(left), heuristic_depth(right)),
+        HeuristicNode::Terminal(_) => 1,
+        HeuristicNode::Unary(_, heuristic) => 1 + heuristic_depth(heuristic),
+        HeuristicNode::Binary(_, left, right) => {
+            1 + max(heuristic_depth(left), heuristic_depth(right))
+        }
     }
 }
 
-pub fn random_heuristic(hsize: i32) -> Heuristic {
+pub fn random_heuristic(hsize: i32) -> HeuristicNode {
     let hsize = match hsize >= 1 {
         true => hsize,
         _ => fastrand::i32(1..=40),
@@ -42,63 +44,63 @@ pub fn random_heuristic(hsize: i32) -> Heuristic {
     }
 }
 
-fn random_terminal() -> Heuristic {
+fn random_terminal() -> HeuristicNode {
     match fastrand::u32(0..=5) {
-        0 => Heuristic::Terminal(Rule::x1),
-        1 => Heuristic::Terminal(Rule::x2),
-        2 => Heuristic::Terminal(Rule::y1),
-        3 => Heuristic::Terminal(Rule::y2),
-        4 => Heuristic::Terminal(Rule::deltaX),
-        5 => Heuristic::Terminal(Rule::deltaY),
+        0 => HeuristicNode::Terminal(Rule::x1),
+        1 => HeuristicNode::Terminal(Rule::x2),
+        2 => HeuristicNode::Terminal(Rule::y1),
+        3 => HeuristicNode::Terminal(Rule::y2),
+        4 => HeuristicNode::Terminal(Rule::deltaX),
+        5 => HeuristicNode::Terminal(Rule::deltaY),
         _ => {
             unreachable!()
         }
     }
 }
 
-fn random_unary(hsize: i32) -> Heuristic {
+fn random_unary(hsize: i32) -> HeuristicNode {
     match fastrand::u32(0..=3) {
-        0 => Heuristic::Unary(Rule::neg, Box::new(random_heuristic(hsize - 1))),
-        1 => Heuristic::Unary(Rule::abs, Box::new(random_heuristic(hsize - 1))),
-        2 => Heuristic::Unary(Rule::sqrt, Box::new(random_heuristic(hsize - 1))),
-        3 => Heuristic::Unary(Rule::sqr, Box::new(random_heuristic(hsize - 1))),
+        0 => HeuristicNode::Unary(Rule::neg, Box::new(random_heuristic(hsize - 1))),
+        1 => HeuristicNode::Unary(Rule::abs, Box::new(random_heuristic(hsize - 1))),
+        2 => HeuristicNode::Unary(Rule::sqrt, Box::new(random_heuristic(hsize - 1))),
+        3 => HeuristicNode::Unary(Rule::sqr, Box::new(random_heuristic(hsize - 1))),
         _ => {
             unreachable!()
         }
     }
 }
 
-fn random_binary(hsize: i32) -> Heuristic {
+fn random_binary(hsize: i32) -> HeuristicNode {
     let left_subtree_size = fastrand::i32(1..=hsize - 2);
     let right_subtree_size = hsize - left_subtree_size - 1;
 
     match fastrand::u32(0..=5) {
-        0 => Heuristic::Binary(
+        0 => HeuristicNode::Binary(
             Rule::plus,
             Box::new(random_heuristic(left_subtree_size)),
             Box::new(random_heuristic(right_subtree_size)),
         ),
-        1 => Heuristic::Binary(
+        1 => HeuristicNode::Binary(
             Rule::div,
             Box::new(random_heuristic(left_subtree_size)),
             Box::new(random_heuristic(right_subtree_size)),
         ),
-        2 => Heuristic::Binary(
+        2 => HeuristicNode::Binary(
             Rule::mul,
             Box::new(random_heuristic(left_subtree_size)),
             Box::new(random_heuristic(right_subtree_size)),
         ),
-        3 => Heuristic::Binary(
+        3 => HeuristicNode::Binary(
             Rule::minus,
             Box::new(random_heuristic(left_subtree_size)),
             Box::new(random_heuristic(right_subtree_size)),
         ),
-        4 => Heuristic::Binary(
+        4 => HeuristicNode::Binary(
             Rule::max,
             Box::new(random_heuristic(left_subtree_size)),
             Box::new(random_heuristic(right_subtree_size)),
         ),
-        5 => Heuristic::Binary(
+        5 => HeuristicNode::Binary(
             Rule::min,
             Box::new(random_heuristic(left_subtree_size)),
             Box::new(random_heuristic(right_subtree_size)),
@@ -116,25 +118,25 @@ mod tests {
     // Tests for heuristic size
     #[test]
     fn test_heuristic_size_1() {
-        let h1 = Heuristic::Terminal(Rule::x1);
+        let h1 = HeuristicNode::Terminal(Rule::x1);
         assert_eq!(heuristic_size(&h1), 1);
     }
 
     #[test]
     fn test_heuristic_size_2() {
-        let h2 = Heuristic::Unary(Rule::neg, Box::new(Heuristic::Terminal(Rule::x1)));
+        let h2 = HeuristicNode::Unary(Rule::neg, Box::new(HeuristicNode::Terminal(Rule::x1)));
         assert_eq!(heuristic_size(&h2), 2);
     }
 
     #[test]
     fn test_heuristic_size_3() {
-        let h3 = Heuristic::Binary(
+        let h3 = HeuristicNode::Binary(
             Rule::plus,
-            Box::new(Heuristic::Unary(
+            Box::new(HeuristicNode::Unary(
                 Rule::abs,
-                Box::new(Heuristic::Terminal(Rule::deltaX)),
+                Box::new(HeuristicNode::Terminal(Rule::deltaX)),
             )),
-            Box::new(Heuristic::Terminal(Rule::deltaY)),
+            Box::new(HeuristicNode::Terminal(Rule::deltaY)),
         );
         assert_eq!(heuristic_size(&h3), 4);
     }
@@ -142,25 +144,25 @@ mod tests {
     // Tests for heuristic depth
     #[test]
     fn test_heuristic_depth_1() {
-        let h1 = Heuristic::Terminal(Rule::x1);
+        let h1 = HeuristicNode::Terminal(Rule::x1);
         assert_eq!(heuristic_depth(&h1), 1);
     }
 
     #[test]
     fn test_heuristic_depth_2() {
-        let h2 = Heuristic::Unary(Rule::neg, Box::new(Heuristic::Terminal(Rule::x1)));
+        let h2 = HeuristicNode::Unary(Rule::neg, Box::new(HeuristicNode::Terminal(Rule::x1)));
         assert_eq!(heuristic_depth(&h2), 2);
     }
 
     #[test]
     fn test_heuristic_depth_3() {
-        let h3 = Heuristic::Binary(
+        let h3 = HeuristicNode::Binary(
             Rule::plus,
-            Box::new(Heuristic::Unary(
+            Box::new(HeuristicNode::Unary(
                 Rule::abs,
-                Box::new(Heuristic::Terminal(Rule::deltaX)),
+                Box::new(HeuristicNode::Terminal(Rule::deltaX)),
             )),
-            Box::new(Heuristic::Terminal(Rule::deltaY)),
+            Box::new(HeuristicNode::Terminal(Rule::deltaY)),
         );
         assert_eq!(heuristic_depth(&h3), 3);
     }

@@ -1,43 +1,58 @@
-use crate::{map::util::{Map, Tile}, heuristic::evaluator::evaluate_heuristic, constants::EDGE_COST};
 use super::state::State;
-use crate::heuristic::parser::Heuristic;
+use crate::heuristic::parser::HeuristicNode;
+use crate::{
+    constants::EDGE_COST,
+    heuristic::executors::interpreter::Interpreter,
+    heuristic::executors::HeuristicExecuter,
+    heuristic::Heuristic,
+    map::util::{Map, Tile},
+};
+use colored::*;
 use std::{collections::BinaryHeap, vec};
 pub struct Problem<'a> {
+    executer: Interpreter,
     start: State,
     goal: State,
     open: BinaryHeap<State>,
     in_open: Vec<bool>,
-    distance: Vec<i32>,
+    distance: Vec<f32>,
     parents: Vec<Option<usize>>,
     expanded: Vec<usize>,
     traversed: Vec<usize>,
     path: Vec<usize>,
     map: &'a Map,
-    h: &'a Heuristic,
+    h: &'a HeuristicNode,
     solved: bool,
     complete: bool,
 }
 
 impl Problem<'_> {
-    pub fn new<'a>(map: &'a Map, h: &'a Heuristic, start_pos: usize, goal_pos: usize) -> Problem<'a> {
-
+    pub fn new<'a>(
+        map: &'a Map,
+        h: &'a HeuristicNode,
+        start_pos: usize,
+        goal_pos: usize,
+    ) -> Problem<'a> {
         let (sx, sy) = map.ind2sub(start_pos);
         let (gx, gy) = map.ind2sub(goal_pos);
-        let start = State::new(start_pos, 0, evaluate_heuristic(h, sx, sy, gx, gy));
-        let goal = State::new(goal_pos, 0, evaluate_heuristic(h, gx, gy, gx, gy));
+        let (sx, sy, gx, gy) = (sx as f32, sy as f32, gx as f32, gy as f32);
+        let executor = Interpreter::create(&Heuristic { root: h.clone() });
+        let start = State::new(start_pos, 0.0, executor.execute(sx, sy, gx, gy));
+        let goal = State::new(goal_pos, 0.0, executor.execute(sx, sy, gx, gy));
 
         // Create binary heap
         let mut open = BinaryHeap::new();
         open.push(start.clone());
 
         Problem {
+            executer: executor,
             start: start.clone(),
             goal: goal.clone(),
             expanded: Vec::new(),
             traversed: Vec::new(),
             open,
-            in_open:  vec![false; map.map.len()],
-            distance: vec![i32::MAX; map.map.len()],
+            in_open: vec![false; map.map.len()],
+            distance: vec![f32::MAX; map.map.len()],
             parents: vec![None; map.map.len()],
             path: Vec::new(),
             map,
@@ -83,16 +98,13 @@ impl Problem<'_> {
         // Iterate over all neighbours
         for &neighbour in self.map.neighbours[cur.position].iter() {
             let new_g = cur.g + EDGE_COST;
-            
+
             if new_g < self.distance[neighbour] {
                 self.traversed.push(neighbour);
                 let (gx, gy) = self.map.ind2sub(self.goal.position);
                 let (nx, ny) = self.map.ind2sub(neighbour);
-                let new_state = State::new(
-                    neighbour,
-                    new_g,
-                    evaluate_heuristic(self.h, nx, ny, gx, gy),
-                );
+                let (gx, gy, nx, ny) = (gx as f32, gy as f32, nx as f32, ny as f32);
+                let new_state = State::new(neighbour, new_g, self.executer.execute(nx, ny, gx, gy));
 
                 // Improve estimate of distance
                 self.distance[neighbour] = new_g;
@@ -131,15 +143,16 @@ impl Problem<'_> {
 
         for i in 0..self.map.map.len() {
             if i == self.start.position {
-                print!("S");
+                print!("{}", "S".blue().bold());
             } else if i == self.goal.position {
-                print!("G");
+                print!("{}", "G".green().bold());
             } else if path.contains(&i) {
-                print!("+");
+                print!("{}", "+".yellow());
             } else {
                 match self.map.map[i] {
-                    Tile::Passable => print!("_"),
-                    Tile::Unpassable => print!("."),
+                    // ■ ▣ ▢ • ·
+                    Tile::Passable => print!("·"),
+                    Tile::Unpassable => print!("■"),
                 }
             }
 
