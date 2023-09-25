@@ -62,6 +62,12 @@ impl Problem<'_> {
             return;
         }
 
+        if self.open.len() == 0 {
+            self.complete = true;
+            self.solved = false;
+            return;
+        }
+
         // Extract the state with the lowest f value
         let cur = self.open.pop().unwrap();
         self.in_open[cur.position] = false;

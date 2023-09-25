@@ -107,7 +107,7 @@ impl Display for Map {
                 Tile::Unpassable => ". ",
             });
 
-            if i % self.m == 0 {
+            if (i + 1) % self.m == 0 {
                 result.push('\n');
             }
         }
