@@ -13,8 +13,6 @@ pub struct Problem<'a> {
     traversed: Vec<usize>,
     path: Vec<usize>,
     map: &'a Map,
-    neighbours: Vec<usize>,
-    neighbour_index: usize,
     h: &'a Heuristic,
     solved: bool,
     complete: bool,
@@ -43,8 +41,6 @@ impl Problem<'_> {
             parents: vec![None; map.map.len()],
             path: Vec::new(),
             map,
-            neighbours: Vec::new(),
-            neighbour_index: usize::MAX,
             h,
             solved: false,
             complete: false,
@@ -59,6 +55,7 @@ impl Problem<'_> {
         (self.solved, self.complete)
     }
 
+    // TODO: Record information on the expansions & traversals during search
     pub fn step(&mut self) -> () {
         // Don't do anything if the problem is solved
         if self.solved || self.complete {
@@ -122,8 +119,10 @@ impl Problem<'_> {
         let path = self.get_path();
 
         for i in 0..self.map.map.len() {
-            if [self.start.position, self.goal.position].contains(&i) {
-                print!("@");
+            if i == self.start.position {
+                print!("S");
+            } else if i == self.goal.position {
+                print!("G");
             } else if path.contains(&i) {
                 print!("+");
             } else {

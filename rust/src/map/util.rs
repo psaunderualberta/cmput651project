@@ -74,6 +74,10 @@ impl Map {
         (pos / self.n, pos % self.m)
     }
 
+    pub fn sub2ind(&self, x: usize, y: usize) -> usize {
+        x * self.n + y
+    }
+
     pub fn get_neighbours(&self, pos: usize) -> &Vec<usize> {
         &self.neighbours[pos as usize]
     }
