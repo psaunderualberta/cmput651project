@@ -1,13 +1,12 @@
-use crate::{map::util::Map, heuristic::evaluator::evaluate_heuristic, constants::EDGE_COST};
+use crate::{map::util::{Map, Tile}, heuristic::evaluator::evaluate_heuristic, constants::EDGE_COST};
 use super::state::State;
 use crate::heuristic::parser::Heuristic;
 use std::{collections::BinaryHeap, vec};
 pub struct Problem<'a> {
     start: State,
     goal: State,
-    cur: State,
     open: BinaryHeap<State>,
-    closed: Vec<bool>,
+    in_open: Vec<bool>,
     distance: Vec<i32>,
     parents: Vec<Option<usize>>,
     expanded: Vec<usize>,
@@ -36,11 +35,10 @@ impl Problem<'_> {
         Problem {
             start: start.clone(),
             goal: goal.clone(),
-            cur: start,
             expanded: Vec::new(),
             traversed: Vec::new(),
             open,
-            closed:  vec![false; map.map.len()],
+            in_open:  vec![false; map.map.len()],
             distance: vec![i32::MAX; map.map.len()],
             parents: vec![None; map.map.len()],
             path: Vec::new(),
@@ -67,63 +65,80 @@ impl Problem<'_> {
             return;
         }
 
-        // No more nodes to expand, problem is not solvable
-        if self.open.len() == 0 {
+        // Extract the state with the lowest f value
+        let cur = self.open.pop().unwrap();
+        self.in_open[cur.position] = false;
+
+        if cur == self.goal {
+            self.solved = true;
             self.complete = true;
-            self.solved = false;
             return;
         }
 
-        // If we have exhausted all neighbours of the current state,
-        // pop a new state from the heap
-        if self.neighbour_index >= self.neighbours.len() {
-            self.cur = self.open.pop().unwrap();
+        // Iterate over all neighbours
+        for &neighbour in self.map.neighbours[cur.position].iter() {
+            let new_g = cur.g + EDGE_COST;
 
-            // If we have reached the goal, we are done
-            if self.cur == self.goal {
-                self.solved = true;
-                self.complete = true;
-                return;
+            if new_g < self.distance[neighbour] {
+                let (gx, gy) = self.map.ind2sub(self.goal.position);
+                let (nx, ny) = self.map.ind2sub(neighbour);
+                let new_state = State::new(
+                    neighbour,
+                    cur.g + EDGE_COST,
+                    evaluate_heuristic(self.h, nx, ny, gx, gy),
+                );
+
+                // Improve estimate of distance
+                self.distance[neighbour] = new_state.g;
+
+                // Update parent
+                self.parents[neighbour] = Some(cur.position);
+
+                // Add new_state to the heap
+                if !self.in_open[neighbour] {
+                    self.open.push(new_state.clone());
+                    self.in_open[neighbour] = true;
+                }
             }
+        }
+    }
 
-            self.neighbours = self.map.neighbours[self.cur.position].clone();
-            self.neighbour_index = 0;
+    fn get_path(&mut self) -> Vec<usize> {
+        if self.path.len() == 0 {
+            let mut cur = self.goal.position;
+            self.path.push(cur);
 
-            // If we've found a better way to 'cur', ignore it and
-            // force new node expansion on next generation
-            if self.cur.f > self.distance[self.cur.position] {
-                self.neighbour_index = self.neighbours.len() + 1;
-                return;
+            while cur != self.start.position {
+                cur = self.parents[cur].unwrap();
+
+                self.path.push(cur);
             }
-
-            self.expanded.push(self.cur.position);
         }
 
-        // Get the new node, update the neighbour index
-        let new_pos = self.neighbours[self.neighbour_index];
-        let (new_x, new_y) = self.map.ind2sub(new_pos);
-        self.neighbour_index += 1;
+        self.path.clone()
+    }
 
-        // TODO: Only compute once
-        let (gx, gy) = self.map.ind2sub(self.goal.position);
+    pub fn print_path_on_map(&mut self) -> () {
+        let path = self.get_path();
 
-        // Create the new state
-        let new_state = State::new(
-            new_pos,
-            self.cur.g + EDGE_COST,
-            evaluate_heuristic(self.h, new_x, new_y, gx, gy),
-        );
+        for i in 0..self.map.map.len() {
+            if [self.start.position, self.goal.position].contains(&i) {
+                print!("@");
+            } else if path.contains(&i) {
+                print!("+");
+            } else {
+                match self.map.map[i] {
+                    Tile::Passable => print!("_"),
+                    Tile::Unpassable => print!("."),
+                }
+            }
 
-        // // If so, add it to the frontier and continue
-        if new_state.f < self.distance[new_pos] {
-            // Improve estimate of distance
-            self.distance[new_pos] = new_state.f;
+            // Add space for readability
+            print!(" ");
 
-            // Add new_state to the heap
-            self.open.push(new_state);
-
-            // Update parent
-            self.parents[new_pos] = Some(self.cur.position);
+            if (i + 1) % self.map.m == 0 {
+                println!();
+            }
         }
     }
 }

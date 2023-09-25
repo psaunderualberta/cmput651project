@@ -77,6 +77,16 @@ impl Map {
     pub fn get_neighbours(&self, pos: usize) -> &Vec<usize> {
         &self.neighbours[pos as usize]
     }
+
+    pub fn random_free_position(&self) -> usize {
+        let mut pos = fastrand::choice(0..self.map.len()).unwrap();
+
+        while self.map[pos] == Tile::Unpassable {
+            pos = fastrand::choice(0..self.map.len()).unwrap();
+        }
+
+        pos
+    }
 }
 
 impl Display for Map {
