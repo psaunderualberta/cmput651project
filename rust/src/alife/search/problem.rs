@@ -72,34 +72,38 @@ impl Problem<'_> {
             return;
         }
 
+        self.expanded.push(cur.position);
+
         // Iterate over all neighbours
         for &neighbour in self.map.neighbours[cur.position].iter() {
             let new_g = cur.g + EDGE_COST;
-
+            
             if new_g < self.distance[neighbour] {
+                self.traversed.push(neighbour);
                 let (gx, gy) = self.map.ind2sub(self.goal.position);
                 let (nx, ny) = self.map.ind2sub(neighbour);
                 let new_state = State::new(
                     neighbour,
-                    cur.g + EDGE_COST,
+                    new_g,
                     evaluate_heuristic(self.h, nx, ny, gx, gy),
                 );
 
                 // Improve estimate of distance
-                self.distance[neighbour] = new_state.g;
+                self.distance[neighbour] = new_g;
 
                 // Update parent
                 self.parents[neighbour] = Some(cur.position);
 
                 // Add new_state to the heap
                 if !self.in_open[neighbour] {
-                    self.open.push(new_state.clone());
+                    self.open.push(new_state);
                     self.in_open[neighbour] = true;
                 }
             }
         }
     }
 
+    // Gets the completed path
     fn get_path(&mut self) -> Vec<usize> {
         if self.path.len() == 0 {
             let mut cur = self.goal.position;
@@ -115,6 +119,7 @@ impl Problem<'_> {
         self.path.clone()
     }
 
+    // Prints the completed search path on the map
     pub fn print_path_on_map(&mut self) -> () {
         let path = self.get_path();
 

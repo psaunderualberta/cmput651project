@@ -41,7 +41,7 @@ fn map_demo() {
 }
 
 fn search_demo() {
-    let map = parse_map_file(Maps::Den009d.value());
+    let map = parse_map_file(Maps::Den312d.value());
     let h = parse_heuristic("(+ deltaX deltaY)");
 
     // Generate random start and goal positions

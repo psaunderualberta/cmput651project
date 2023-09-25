@@ -3,12 +3,14 @@ use std::fmt::Display;
 // Enumeration for possible maps on which to search.
 pub enum Maps {
     Den009d,
+    Den312d,
 }
 
 impl Maps {
     pub fn value(&self) -> &str {
         match *self {
             Maps::Den009d => "./src/map/data/den009d.map",
+            Maps::Den312d => "./src/map/data/den312d.map",
         }
     }
 }
@@ -101,8 +103,8 @@ impl Display for Map {
         // Write the map itself
         for i in 1..self.map.len() {
             result.push_str(match self.map[i] {
-                Tile::Passable => "0 ",
-                Tile::Unpassable => "1 ",
+                Tile::Passable => "_ ",
+                Tile::Unpassable => ". ",
             });
 
             if i % self.m == 0 {
