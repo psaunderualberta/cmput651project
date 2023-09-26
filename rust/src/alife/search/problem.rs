@@ -39,6 +39,8 @@ impl Problem<'_> {
         let start = State::new(start_pos, 0.0, executor.execute(sx, sy, gx, gy));
         let goal = State::new(goal_pos, 0.0, executor.execute(sx, sy, gx, gy));
 
+        // TODO: Try creating entire distance array as positive? Then only place references into the open list?
+
         // Create binary heap
         let mut open = BinaryHeap::new();
         open.push(start.clone());
