@@ -11,7 +11,7 @@ use map::parser::parse_map_file;
 use map::util::Maps;
 
 fn main() {
-    let choice = 3;
+    let choice = 2;
 
     match choice {
         0 => heuristic_demo(),

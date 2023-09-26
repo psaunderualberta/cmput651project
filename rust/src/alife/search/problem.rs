@@ -21,7 +21,6 @@ pub struct Problem<'a> {
     traversed: Vec<usize>,
     path: Vec<usize>,
     map: &'a Map,
-    h: &'a HeuristicNode,
     solved: bool,
     complete: bool,
 }
@@ -43,6 +42,8 @@ impl Problem<'_> {
         // Create binary heap
         let mut open = BinaryHeap::new();
         open.push(start.clone());
+        let mut in_open = vec![false; map.map.len()];
+        in_open[start.position] = true;
 
         Problem {
             executer: executor,
@@ -51,12 +52,11 @@ impl Problem<'_> {
             expanded: Vec::new(),
             traversed: Vec::new(),
             open,
-            in_open: vec![false; map.map.len()],
+            in_open,
             distance: vec![f32::MAX; map.map.len()],
             parents: vec![None; map.map.len()],
             path: Vec::new(),
             map,
-            h,
             solved: false,
             complete: false,
         }
@@ -85,6 +85,7 @@ impl Problem<'_> {
 
         // Extract the state with the lowest f value
         let cur = self.open.pop().unwrap();
+        assert_eq!(self.in_open[cur.position], true);
         self.in_open[cur.position] = false;
 
         if cur == self.goal {
@@ -113,6 +114,8 @@ impl Problem<'_> {
                 self.parents[neighbour] = Some(cur.position);
 
                 // Add new_state to the heap
+                // TODO: Fix by updating the 'g' value of new_state regardless of the
+                // if statement's success
                 if !self.in_open[neighbour] {
                     self.open.push(new_state);
                     self.in_open[neighbour] = true;
