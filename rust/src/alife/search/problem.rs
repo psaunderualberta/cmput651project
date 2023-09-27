@@ -12,6 +12,12 @@ use crate::{
 use colored::*;
 
 pub struct Problem<'a> {
+    pub map: &'a Map,
+    pub start: usize,
+    pub goal: usize,
+}
+
+pub struct AStar<'a> {
     executer: Interpreter,
     start: State,
     goal: State,
@@ -27,21 +33,18 @@ pub struct Problem<'a> {
     complete: bool,
 }
 
-impl Problem<'_> {
-    pub fn new<'a>(
-        map: &'a Map,
-        h: &'a HeuristicNode,
-        start_pos: usize,
-        goal_pos: usize,
-    ) -> Problem<'a> {
+impl AStar<'_> {
+    pub fn from_problem<'a>(problem: &Problem<'a>, h: &'a HeuristicNode) -> AStar<'a> {
+        Self::new(problem.map, h, problem.start, problem.goal)
+    }
+
+    pub fn new<'a>(map: &'a Map, h: &'a HeuristicNode, start_pos: usize, goal_pos: usize) -> AStar<'a> {
         let (sx, sy) = map.ind2sub(start_pos);
         let (gx, gy) = map.ind2sub(goal_pos);
         let (sx, sy, gx, gy) = (sx as f32, sy as f32, gx as f32, gy as f32);
         let executor = Interpreter::create(&Heuristic { root: h.clone() });
         let start = State::new(start_pos, 0.0, executor.execute(sx, sy, gx, gy));
         let goal = State::new(goal_pos, 0.0, executor.execute(gx, gy, gx, gy));
-
-        // TODO: Try creating entire distance array as positive? Then only place references into the open list?
 
         // Create priority queue
         let mut open = BinaryHeap::new();
@@ -51,7 +54,7 @@ impl Problem<'_> {
         let mut g = vec![None; map.map.len()];
         g[start.position] = Some(start.g);
 
-        Problem {
+        AStar {
             executer: executor,
             start: start.clone(),
             goal: goal.clone(),
@@ -130,6 +133,14 @@ impl Problem<'_> {
                 self.open.push(new_state);
             }
         }
+    }
+
+    pub fn is_complete(&self) -> bool {
+        self.complete
+    }
+
+    pub fn get_num_expansions(&self) -> usize {
+        self.expanded.len()
     }
 
     // Gets the completed path

@@ -3,12 +3,14 @@ mod constants;
 mod heuristic;
 mod map;
 
-use alife::search::problem::Problem;
+use alife::search::problem::{Problem, AStar};
 use heuristic::mutator::mutate_heuristic;
 use heuristic::parser::parse_heuristic;
 use heuristic::util::{heuristic_size, random_heuristic};
 use map::parser::parse_map_file;
 use map::util::Maps;
+
+use crate::alife::search::cycle::AStarCycle;
 
 fn main() {
     let choice = 3;
@@ -49,52 +51,63 @@ fn map_demo() {
 }
 
 fn search_demo() {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = &parse_map_file(Maps::Den312d.value());
     let h = parse_heuristic("(+ deltaX deltaY)");
 
     // Generate random start and goal positions
-    let start_pos = map.random_free_position();
-    let mut goal_pos = map.random_free_position();
-    while start_pos == goal_pos {
-        goal_pos = map.random_free_position();
+    let start = map.random_free_position();
+    let mut goal = map.random_free_position();
+    while start == goal {
+        goal = map.random_free_position();
     }
 
-    println!("Start: {:?}", map.ind2sub(start_pos));
-    println!("Goal: {:?}", map.ind2sub(goal_pos));
+    println!("Start: {:?}", map.ind2sub(start));
+    println!("Goal: {:?}", map.ind2sub(goal));
 
-    let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
-    let (solved, complete) = problem.solve();
+    let mut astar = AStar::new(&map, &h, start, goal);
+    let (solved, complete) = astar.solve();
 
     assert!(solved);
     assert!(complete);
-    problem.print_path_on_map();
+    astar.print_path_on_map();
 }
 
 fn benchmark() {
     use std::time::Instant;
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = &parse_map_file(Maps::Den312d.value());
     let h =
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 
+    // Create problems
+    let num_problems = 10000;
+    let mut astarcycle = AStarCycle::new(&map, &h, num_problems);
+
+    // Perform first solve
     let now = Instant::now();
+    astarcycle.solve_cycle();
+    println!("Time to solve problems on first go: {:.2?}", now.elapsed());
 
-    // solve problems a bunch of times
-    for _ in 0..10000 {
-        // Generate new problems
-        let start_pos = map.random_free_position();
-        let mut goal_pos = map.random_free_position();
-        while start_pos == goal_pos {
-            goal_pos = map.random_free_position();
-        }
-
-        // solve the problem
-        let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
-        let (solved, complete) = problem.solve();
-
-        // Ensure the problem was solved
-        assert!(solved);
-        assert!(complete);
-    }
-
-    println!("{:.2?}", now.elapsed());
+    // Perform second solve of cycle
+    let now = Instant::now();
+    astarcycle.solve_cycle();
+    println!("Time to solve problems on second go: {:.2?}", now.elapsed());
 }
+
+/* Code for manually creating problems, rather than a single cycle */
+    // for i in 0..10000 {
+    //     println!("{}", i);
+    //     // Generate new problems
+    //     let start_pos = map.random_free_position();
+    //     let mut goal_pos = map.random_free_position();
+    //     while start_pos == goal_pos {
+    //         goal_pos = map.random_free_position();
+    //     }
+
+    //     // solve the problem
+    //     let mut problem = AStar::new(&map, &h, start_pos, goal_pos);
+    //     let (solved, complete) = problem.solve();
+
+    //     // Ensure the problem was solved
+    //     assert!(solved);
+    //     assert!(complete);
+    // }
