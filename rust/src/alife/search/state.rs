@@ -1,4 +1,4 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, hash::Hash};
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -42,5 +42,11 @@ impl Ord for State {
 impl PartialOrd for State {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+impl Hash for State {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.position.hash(state);
     }
 }

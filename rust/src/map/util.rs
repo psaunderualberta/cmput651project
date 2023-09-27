@@ -49,12 +49,12 @@ impl Map {
             }
 
             // Can go left
-            if i % n != 0 && map[i - 1] == Tile::Passable {
+            if i % m != 0 && map[i - 1] == Tile::Passable {
                 neighbours[i].push(i - 1);
             }
 
             // Can go right
-            if (i + 1) % n != 0 && map[i + 1] == Tile::Passable {
+            if (i + 1) % m != 0 && map[i + 1] == Tile::Passable {
                 neighbours[i].push(i + 1);
             }
 
@@ -78,15 +78,11 @@ impl Map {
     }
 
     pub fn ind2sub(&self, pos: usize) -> (usize, usize) {
-        (pos / self.n, pos % self.n)
+        (pos / self.m, pos % self.m)
     }
 
     pub fn sub2ind(&self, x: usize, y: usize) -> usize {
-        x * self.n + y
-    }
-
-    pub fn get_neighbours(&self, pos: usize) -> &Vec<usize> {
-        &self.neighbours[pos as usize]
+        x * self.m + y
     }
 
     pub fn random_free_position(&self) -> usize {

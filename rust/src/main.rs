@@ -53,14 +53,11 @@ fn search_demo() {
     let h = parse_heuristic("(+ deltaX deltaY)");
 
     // Generate random start and goal positions
-    let start_pos = map.sub2ind(60, 69);
-    let goal_pos = map.sub2ind(32, 69);
-    
-    // let start_pos = map.random_free_position();
-    // let mut goal_pos = map.random_free_position();
-    // while start_pos == goal_pos {
-    //     goal_pos = map.random_free_position();
-    // }
+    let start_pos = map.random_free_position();
+    let mut goal_pos = map.random_free_position();
+    while start_pos == goal_pos {
+        goal_pos = map.random_free_position();
+    }
 
     println!("Start: {:?}", map.ind2sub(start_pos));
     println!("Goal: {:?}", map.ind2sub(goal_pos));

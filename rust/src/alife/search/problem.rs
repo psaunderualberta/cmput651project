@@ -1,3 +1,5 @@
+use std::collections::BinaryHeap;
+
 use super::state::State;
 use crate::heuristic::parser::HeuristicNode;
 use crate::{
@@ -8,14 +10,14 @@ use crate::{
     map::util::{Map, Tile},
 };
 use colored::*;
-use std::{collections::BinaryHeap, vec};
+
 pub struct Problem<'a> {
     executer: Interpreter,
     start: State,
     goal: State,
     open: BinaryHeap<State>,
-    in_open: Vec<bool>,
-    distance: Vec<f32>,
+    closed: Vec<bool>,
+    g: Vec<Option<f32>>,
     parents: Vec<Option<usize>>,
     expanded: Vec<usize>,
     traversed: Vec<usize>,
@@ -37,15 +39,17 @@ impl Problem<'_> {
         let (sx, sy, gx, gy) = (sx as f32, sy as f32, gx as f32, gy as f32);
         let executor = Interpreter::create(&Heuristic { root: h.clone() });
         let start = State::new(start_pos, 0.0, executor.execute(sx, sy, gx, gy));
-        let goal = State::new(goal_pos, 0.0, executor.execute(sx, sy, gx, gy));
+        let goal = State::new(goal_pos, 0.0, executor.execute(gx, gy, gx, gy));
 
         // TODO: Try creating entire distance array as positive? Then only place references into the open list?
 
-        // Create binary heap
+        // Create priority queue
         let mut open = BinaryHeap::new();
         open.push(start.clone());
-        let mut in_open = vec![false; map.map.len()];
-        in_open[start.position] = true;
+
+        // Create closed list
+        let mut g = vec![None; map.map.len()];
+        g[start.position] = Some(start.g);
 
         Problem {
             executer: executor,
@@ -54,8 +58,8 @@ impl Problem<'_> {
             expanded: Vec::new(),
             traversed: Vec::new(),
             open,
-            in_open,
-            distance: vec![f32::MAX; map.map.len()],
+            closed: vec![false; map.map.len()],
+            g,
             parents: vec![None; map.map.len()],
             path: Vec::new(),
             map,
@@ -72,7 +76,6 @@ impl Problem<'_> {
         (self.solved, self.complete)
     }
 
-    // TODO: Record information on the expansions & traversals during search
     pub fn step(&mut self) -> () {
         // Don't do anything if the problem is solved
         if self.solved || self.complete {
@@ -87,8 +90,6 @@ impl Problem<'_> {
 
         // Extract the state with the lowest f value
         let cur = self.open.pop().unwrap();
-        assert_eq!(self.in_open[cur.position], true);
-        self.in_open[cur.position] = false;
 
         if cur == self.goal {
             self.solved = true;
@@ -96,32 +97,37 @@ impl Problem<'_> {
             return;
         }
 
+        // Determine if there's a better path to this node
+        let cur_g = self.g[cur.position].unwrap();
+        if cur_g != cur.g {
+            return;
+        }
+
+        self.closed[cur.position] = true;
         self.expanded.push(cur.position);
 
         // Iterate over all neighbours
         for &neighbour in self.map.neighbours[cur.position].iter() {
-            let new_g = cur.g + EDGE_COST;
+            if self.closed[neighbour] {
+                continue;
+            }
 
-            if new_g < self.distance[neighbour] {
-                self.traversed.push(neighbour);
-                let (gx, gy) = self.map.ind2sub(self.goal.position);
-                let (nx, ny) = self.map.ind2sub(neighbour);
-                let (gx, gy, nx, ny) = (gx as f32, gy as f32, nx as f32, ny as f32);
-                let new_state = State::new(neighbour, new_g, self.executer.execute(nx, ny, gx, gy));
+            let new_g = cur_g + EDGE_COST;
+            self.traversed.push(neighbour);
 
-                // Improve estimate of distance
-                self.distance[neighbour] = new_g;
+            let (gx, gy) = self.map.ind2sub(self.goal.position);
+            let (nx, ny) = self.map.ind2sub(neighbour);
 
+            let (gx, gy, nx, ny) = (gx as f32, gy as f32, nx as f32, ny as f32);
+            let new_h = self.executer.execute(nx, ny, gx, gy);
+
+            let new_state = State::new(neighbour, new_g, new_h);
+            if self.g[neighbour].is_none() || new_g < self.g[neighbour].unwrap() {
                 // Update parent
                 self.parents[neighbour] = Some(cur.position);
 
-                // Add new_state to the heap
-                // TODO: Fix by updating the 'g' value of new_state regardless of the
-                // if statement's success
-                if !self.in_open[neighbour] {
-                    self.open.push(new_state);
-                    self.in_open[neighbour] = true;
-                }
+                self.g[neighbour] = Some(new_g);
+                self.open.push(new_state);
             }
         }
     }
