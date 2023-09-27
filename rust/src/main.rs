@@ -11,7 +11,7 @@ use map::parser::parse_map_file;
 use map::util::Maps;
 
 fn main() {
-    let choice = 2;
+    let choice = 3;
 
     match choice {
         0 => heuristic_demo(),
@@ -71,22 +71,30 @@ fn search_demo() {
 }
 
 fn benchmark() {
+    use std::time::Instant;
     let map = parse_map_file(Maps::Den312d.value());
     let h =
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 
-    let start_pos = map.sub2ind(58, 2);
-    let goal_pos = map.sub2ind(45, 62);
+    let now = Instant::now();
 
-    println!("Start: {:?}", map.ind2sub(start_pos));
-    println!("Goal: {:?}", map.ind2sub(goal_pos));
-
-    let (mut solved, mut complete) = (false, false);
+    // solve problems a bunch of times
     for _ in 0..10000 {
+        // Generate new problems
+        let start_pos = map.random_free_position();
+        let mut goal_pos = map.random_free_position();
+        while start_pos == goal_pos {
+            goal_pos = map.random_free_position();
+        }
+
+        // solve the problem
         let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
-        (solved, complete) = problem.solve();
+        let (solved, complete) = problem.solve();
+
+        // Ensure the problem was solved
+        assert!(solved);
+        assert!(complete);
     }
 
-    assert!(solved);
-    assert!(complete);
+    println!("{:.2?}", now.elapsed());
 }
