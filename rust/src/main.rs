@@ -3,14 +3,14 @@ mod constants;
 mod heuristic;
 mod map;
 
-use alife::search::problem::{Problem, AStar};
+use alife::search::problem::Problem;
 use heuristic::mutator::mutate_heuristic;
 use heuristic::parser::parse_heuristic;
 use heuristic::util::{heuristic_size, random_heuristic};
 use map::parser::parse_map_file;
 use map::util::Maps;
 
-use crate::alife::search::cycle::AStarCycle;
+use crate::alife::search::cycle::CycleSolver;
 
 fn main() {
     let choice = 3;
@@ -52,7 +52,7 @@ fn map_demo() {
 
 fn search_demo() {
     let map = &parse_map_file(Maps::Den312d.value());
-    let h = parse_heuristic("(+ deltaX deltaY)");
+    let h = parse_heuristic("(sqr (max deltaY deltaX))");
 
     // Generate random start and goal positions
     let start = map.random_free_position();
@@ -64,12 +64,11 @@ fn search_demo() {
     println!("Start: {:?}", map.ind2sub(start));
     println!("Goal: {:?}", map.ind2sub(goal));
 
-    let mut astar = AStar::new(&map, &h, start, goal);
-    let (solved, complete) = astar.solve();
+    let problem = Problem::new(start, goal);
+    let result = problem.solve(&map, &h);
 
-    assert!(solved);
-    assert!(complete);
-    astar.print_path_on_map();
+    assert!(result.solved);
+    problem.print_path_on_map(&map, result.solution_path);
 }
 
 fn benchmark() {
@@ -80,7 +79,7 @@ fn benchmark() {
 
     // Create problems
     let num_problems = 10000;
-    let mut astarcycle = AStarCycle::new(&map, &h, num_problems);
+    let mut astarcycle = CycleSolver::new(&map, &h, num_problems);
 
     // Perform first solve
     let now = Instant::now();
