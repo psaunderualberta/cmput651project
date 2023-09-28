@@ -3,6 +3,7 @@ use crate::heuristic::parser::HeuristicNode;
 use crate::{
     constants::EDGE_COST,
     heuristic::executors::interpreter::Interpreter,
+    heuristic::executors::jit::Jit,
     heuristic::executors::HeuristicExecuter,
     heuristic::Heuristic,
     map::util::{Map, Tile},
@@ -10,7 +11,8 @@ use crate::{
 use colored::*;
 use std::{collections::BinaryHeap, vec};
 pub struct Problem<'a> {
-    executer: Interpreter,
+    // pub executer: Interpreter,
+    pub executer: Jit<'a>,
     start: State,
     goal: State,
     open: BinaryHeap<State>,
@@ -32,11 +34,13 @@ impl Problem<'_> {
         h: &'a HeuristicNode,
         start_pos: usize,
         goal_pos: usize,
+        context: &'a inkwell::context::Context,
     ) -> Problem<'a> {
         let (sx, sy) = map.ind2sub(start_pos);
         let (gx, gy) = map.ind2sub(goal_pos);
         let (sx, sy, gx, gy) = (sx as f32, sy as f32, gx as f32, gy as f32);
-        let executor = Interpreter::create(&Heuristic { root: h.clone() });
+        // let executor = Interpreter::create(&Heuristic { root: h.clone() });
+        let executor = Jit::create(&Heuristic { root: h.clone() }, context);
         let start = State::new(start_pos, 0.0, executor.execute(sx, sy, gx, gy));
         let goal = State::new(goal_pos, 0.0, executor.execute(sx, sy, gx, gy));
 
@@ -60,6 +64,19 @@ impl Problem<'_> {
             solved: false,
             complete: false,
         }
+    }
+
+    pub fn reset(&mut self) {
+        self.open = BinaryHeap::new();
+        self.open.push(self.start.clone());
+        self.in_open = vec![false; self.map.map.len()];
+        self.distance = vec![f32::MAX; self.map.map.len()];
+        self.parents = vec![None; self.map.map.len()];
+        self.expanded = Vec::new();
+        self.traversed = Vec::new();
+        self.path = Vec::new();
+        self.solved = false;
+        self.complete = false;
     }
 
     pub fn solve(&mut self) -> (bool, bool) {

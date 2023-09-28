@@ -10,6 +10,8 @@ use heuristic::util::{heuristic_size, random_heuristic};
 use map::parser::parse_map_file;
 use map::util::Maps;
 
+use crate::heuristic::executors::HeuristicExecuter;
+
 fn main() {
     let choice = 3;
 
@@ -73,8 +75,11 @@ fn search_demo() {
 
 fn benchmark() {
     let map = parse_map_file(Maps::Den312d.value());
-    let h =
-        parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
+    let h = parse_heuristic(
+        "(+ (+ (+ (+ (+ (+ (sqrt (neg (sqrt (abs (* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY))))) deltaX) deltaY) deltaX) deltaY) deltaX) deltaY)",
+        // "(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)",
+        // "(sqrt (sqrt (sqrt (sqrt (sqrt (+ deltaX deltaY))))))",
+    );
 
     let start_pos = map.sub2ind(58, 2);
     let goal_pos = map.sub2ind(45, 62);
@@ -82,12 +87,20 @@ fn benchmark() {
     println!("Start: {:?}", map.ind2sub(start_pos));
     println!("Goal: {:?}", map.ind2sub(goal_pos));
 
+    let context = inkwell::context::Context::create();
+
     let (mut solved, mut complete) = (false, false);
-    for _ in 0..10000 {
-        let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
-        (solved, complete) = problem.solve();
+    let mut problem = Problem::new(&map, &h, start_pos, goal_pos, &context);
+    let mut sum: f64 = 0.0;
+    for _ in 0..100000000 {
+        // let mut problem = Problem::new(&map, &h, start_pos, goal_pos, &context);
+        // (solved, complete) = problem.solve();
+        // problem.reset();
+        sum += problem.executer.execute(1.0, 2.0, 3.0, 4.0) as f64;
     }
 
-    assert!(solved);
-    assert!(complete);
+    // assert!(solved);
+    // assert!(complete);
+    println!("{}", sum / 100000000.0);
+    println!("{}", problem.executer.execute(1.0, 2.0, 3.0, 4.0));
 }
