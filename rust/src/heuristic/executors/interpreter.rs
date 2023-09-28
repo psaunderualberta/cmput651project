@@ -45,8 +45,8 @@ impl RecursiveExecutor {
             Rule::y1 => self.y1,
             Rule::x2 => self.x2,
             Rule::y2 => self.y2,
-            Rule::deltaX => self.x2 - self.x1,
-            Rule::deltaY => self.y2 - self.y1,
+            Rule::deltaX => (self.x2 - self.x1).abs(),
+            Rule::deltaY => (self.y2 - self.y1).abs(),
             _ => {
                 unreachable!("{:?}", rule);
             }

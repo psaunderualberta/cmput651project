@@ -10,6 +10,7 @@ WORKDIR /tmp
 
 RUN apt-get update && apt-get upgrade -q -y && \
     apt-get install -q -y --no-install-recommends \
+    openssh-client \
     curl \
     wget \
     unzip \

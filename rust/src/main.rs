@@ -10,7 +10,7 @@ use heuristic::util::{heuristic_size, random_heuristic};
 use map::parser::parse_map_file;
 use map::util::Maps;
 
-use crate::heuristic::executors::HeuristicExecuter;
+use crate::alife::search::cycle::CycleSolver;
 
 fn main() {
     let choice = 3;
@@ -51,56 +51,62 @@ fn map_demo() {
 }
 
 fn search_demo() {
-    let map = parse_map_file(Maps::Den312d.value());
-    let h = parse_heuristic("(+ deltaX deltaY)");
+    let map = &parse_map_file(Maps::Den312d.value());
+    let h = parse_heuristic("(sqr (max deltaY deltaX))");
 
     // Generate random start and goal positions
-    let start_pos = map.random_free_position();
-    let mut goal_pos = map.random_free_position();
-
-    while start_pos == goal_pos {
-        goal_pos = map.random_free_position();
+    let start = map.random_free_position();
+    let mut goal = map.random_free_position();
+    while start == goal {
+        goal = map.random_free_position();
     }
 
-    println!("Start: {:?}", map.ind2sub(start_pos));
-    println!("Goal: {:?}", map.ind2sub(goal_pos));
+    println!("Start: {:?}", map.ind2sub(start));
+    println!("Goal: {:?}", map.ind2sub(goal));
 
-    let mut problem = Problem::new(&map, &h, start_pos, goal_pos);
-    let (solved, complete) = problem.solve();
+    let problem = Problem::new(start, goal);
+    let result = problem.solve(&map, &h);
 
-    assert!(solved);
-    assert!(complete);
-    problem.print_path_on_map();
+    assert!(result.solved);
+    problem.print_path_on_map(&map, result.solution_path);
 }
 
 fn benchmark() {
-    let map = parse_map_file(Maps::Den312d.value());
-    let h = parse_heuristic(
-        "(+ (+ (+ (+ (+ (+ (sqrt (neg (sqrt (abs (* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY))))) deltaX) deltaY) deltaX) deltaY) deltaX) deltaY)",
-        // "(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)",
-        // "(sqrt (sqrt (sqrt (sqrt (sqrt (+ deltaX deltaY))))))",
-    );
+    use std::time::Instant;
+    let map = &parse_map_file(Maps::Den312d.value());
+    let h =
+        parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 
-    let start_pos = map.sub2ind(58, 2);
-    let goal_pos = map.sub2ind(45, 62);
+    // Create problems
+    let num_problems = 10000;
+    let mut astarcycle = CycleSolver::new(&map, &h, num_problems);
 
-    println!("Start: {:?}", map.ind2sub(start_pos));
-    println!("Goal: {:?}", map.ind2sub(goal_pos));
+    // Perform first solve
+    let now = Instant::now();
+    astarcycle.solve_cycle();
+    println!("Time to solve problems on first go: {:.2?}", now.elapsed());
 
-    let context = inkwell::context::Context::create();
-
-    let (mut solved, mut complete) = (false, false);
-    let mut problem = Problem::new(&map, &h, start_pos, goal_pos, &context);
-    let mut sum: f64 = 0.0;
-    for _ in 0..100000000 {
-        // let mut problem = Problem::new(&map, &h, start_pos, goal_pos, &context);
-        // (solved, complete) = problem.solve();
-        // problem.reset();
-        sum += problem.executer.execute(1.0, 2.0, 3.0, 4.0) as f64;
-    }
-
-    // assert!(solved);
-    // assert!(complete);
-    println!("{}", sum / 100000000.0);
-    println!("{}", problem.executer.execute(1.0, 2.0, 3.0, 4.0));
+    // Perform second solve of cycle
+    let now = Instant::now();
+    astarcycle.solve_cycle();
+    println!("Time to solve problems on second go: {:.2?}", now.elapsed());
 }
+
+/* Code for manually creating problems, rather than a single cycle */
+// for i in 0..10000 {
+//     println!("{}", i);
+//     // Generate new problems
+//     let start_pos = map.random_free_position();
+//     let mut goal_pos = map.random_free_position();
+//     while start_pos == goal_pos {
+//         goal_pos = map.random_free_position();
+//     }
+
+//     // solve the problem
+//     let mut problem = AStar::new(&map, &h, start_pos, goal_pos);
+//     let (solved, complete) = problem.solve();
+
+//     // Ensure the problem was solved
+//     assert!(solved);
+//     assert!(complete);
+// }

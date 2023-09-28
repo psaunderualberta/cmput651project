@@ -1,5 +1,9 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+
+// Ref if devcontainer doesn't have access to ssh keys:
+// https://superuser.com/questions/1726204/get-agent-identities-ssh-agent-bind-hostkey-communication-with-agent-failed/1744159#1744159
+
 {
   "name": "ubuntu",
   "build": {
