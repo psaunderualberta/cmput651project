@@ -9,6 +9,7 @@ struct HeuristicParser;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HeuristicNode {
+    Number(i32),
     Terminal(Rule),
     Unary(Rule, Box<HeuristicNode>),
     Binary(Rule, Box<HeuristicNode>, Box<HeuristicNode>),
@@ -18,6 +19,7 @@ pub enum HeuristicNode {
 impl Display for HeuristicNode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            HeuristicNode::Number(num) => write!(f, "{:?}", num),
             HeuristicNode::Terminal(rule) => write!(f, "{:?}", rule),
             HeuristicNode::Unary(rule, h) => write!(f, "({:?} {})", rule, h),
             HeuristicNode::Binary(rule, h1, h2) => write!(f, "({:?} {} {})", rule, h1, h2),
@@ -45,6 +47,7 @@ fn pairs2struct(result: Pairs<Rule>) -> HeuristicNode {
             Box::new(pairs2struct(Pairs::single(pairs.next().unwrap()))),
         ),
         Rule::terminal => HeuristicNode::Terminal(operator.into_inner().next().unwrap().as_rule()),
+        Rule::number => HeuristicNode::Number(operator.as_str().parse::<i32>().unwrap()),
         other => {
             unreachable!("{:?}", other)
         }
@@ -84,6 +87,28 @@ mod tests {
                     Rule::abs,
                     Box::new(HeuristicNode::Terminal(Rule::x1))
                 ))
+            )
+        );
+    }
+
+    #[test]
+    fn test_parse_success_3() {
+        let h3 = parse_heuristic("x1");
+        assert_eq!(
+            h3,
+            HeuristicNode::Terminal(Rule::x1)
+        );
+    }
+    
+    #[test]
+    fn test_parse_success_4() {
+        let h4 = parse_heuristic("(+ 1 3)");
+        assert_eq!(
+            h4,
+            HeuristicNode::Binary(
+                Rule::plus,
+                Box::new(HeuristicNode::Number(1)),
+                Box::new(HeuristicNode::Number(3))
             )
         );
     }

@@ -31,6 +31,7 @@ fn mutate_heuristic_helper(
     match mut_prob >= fastrand::f32() {
         true => (random_heuristic(new_tree_size), true),
         false => match heuristic {
+            HeuristicNode::Number(_) => (random_heuristic(new_tree_size), false),
             HeuristicNode::Terminal(_) => (random_heuristic(new_tree_size), false),
             HeuristicNode::Unary(rule, h) => {
                 let (new_h, mutated) =

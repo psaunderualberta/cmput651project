@@ -33,6 +33,7 @@ struct RecursiveExecutor {
 impl RecursiveExecutor {
     fn evaluate_node(&self, node: &HeuristicNode) -> f32 {
         match node {
+            HeuristicNode::Number(num) => *num as f32,
             HeuristicNode::Terminal(rule) => self.evaluate_terminal(*rule),
             HeuristicNode::Unary(rule, h) => self.evaluate_unary(*rule, h),
             HeuristicNode::Binary(rule, h1, h2) => self.evaluate_binary(*rule, h1, h2),
