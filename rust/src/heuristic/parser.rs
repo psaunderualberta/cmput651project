@@ -2,6 +2,7 @@ use pest::iterators::Pairs;
 use pest::Parser;
 use pest_derive::Parser;
 use std::fmt::Display;
+use std::hash::Hash;
 
 #[derive(Parser)]
 #[grammar = "heuristic/grammar/heuristic.pest"]
@@ -24,6 +25,12 @@ impl Display for HeuristicNode {
             HeuristicNode::Unary(rule, h) => write!(f, "({:?} {})", rule, h),
             HeuristicNode::Binary(rule, h1, h2) => write!(f, "({:?} {} {})", rule, h1, h2),
         }
+    }
+}
+
+impl Hash for HeuristicNode {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.to_string().hash(state);
     }
 }
 

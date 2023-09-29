@@ -11,6 +11,7 @@ use crate::{
 };
 use colored::*;
 
+#[derive(Clone)]
 pub struct Problem {
     pub start: usize,
     pub goal: usize,

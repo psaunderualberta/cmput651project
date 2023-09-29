@@ -79,7 +79,7 @@ fn benchmark() {
 
     // Create problems
     let num_problems = 10000;
-    let mut astarcycle = CycleSolver::new(&map, &h, num_problems);
+    let mut astarcycle = CycleSolver::new(&map, h, num_problems);
 
     // Perform first solve
     let now = Instant::now();
