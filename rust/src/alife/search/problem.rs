@@ -22,6 +22,7 @@ pub struct ProblemResult {
     pub num_traversals: usize,
     pub solution_path: Vec<usize>,
     pub solved: bool,
+    pub bound_exceeded: bool
 }
 
 impl Problem {
@@ -32,7 +33,11 @@ impl Problem {
         }
     }
 
-    pub fn solve(&self, map: &Map, h: & HeuristicNode) -> ProblemResult {
+    pub fn solve(&self, map: &Map, h: &HeuristicNode) -> ProblemResult {
+        self.solve_bounded(map, h, usize::MAX)
+    }
+
+    pub fn solve_bounded(&self, map: &Map, h: & HeuristicNode, expansion_bound: usize) -> ProblemResult {
         let (sx, sy) = map.ind2sub(self.start);
         let (gx, gy) = map.ind2sub(self.goal);
         let (sx, sy, gx, gy) = (sx as f32, sy as f32, gx as f32, gy as f32);
@@ -57,7 +62,7 @@ impl Problem {
         let mut num_traversals = 0;
         let mut solved = false;
 
-        while !open.is_empty() {
+        while !open.is_empty() && expansions.len() < expansion_bound {
             // Extract the state with the lowest f value
             let cur = open.pop().unwrap();
             if cur.position == self.goal {
@@ -100,11 +105,13 @@ impl Problem {
             }
         }
 
+        let num_expansions = expansions.len();
         ProblemResult { 
             expansions,
             num_traversals,
             solution_path: self.get_path(parents),
-            solved
+            solved,
+            bound_exceeded: num_expansions >= expansion_bound
         }
     }
 

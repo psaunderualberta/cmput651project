@@ -13,7 +13,7 @@ use map::util::Maps;
 use crate::alife::search::cycle::CycleSolver;
 
 fn main() {
-    let choice = 3;
+    let choice = 2;
 
     match choice {
         0 => heuristic_demo(),
