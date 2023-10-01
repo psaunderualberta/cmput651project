@@ -4,9 +4,11 @@ mod heuristic;
 mod map;
 
 use alife::search::problem::Problem;
+use heuristic::executors::jit::Jit;
 use heuristic::mutator::mutate_heuristic;
 use heuristic::parser::parse_heuristic;
 use heuristic::util::{heuristic_size, random_heuristic};
+use heuristic::Heuristic;
 use map::parser::parse_map_file;
 use map::util::Maps;
 
@@ -20,6 +22,7 @@ fn main() {
         1 => map_demo(),
         2 => search_demo(),
         3 => benchmark(),
+        4 => benchmark_executers(),
         _ => {
             unreachable!();
         }
@@ -51,7 +54,7 @@ fn map_demo() {
 }
 
 fn search_demo() {
-    let map = &parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.value());
     let h = parse_heuristic("(sqr (max deltaY deltaX))");
 
     // Generate random start and goal positions
@@ -73,7 +76,7 @@ fn search_demo() {
 
 fn benchmark() {
     use std::time::Instant;
-    let map = &parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.value());
     let h =
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 
@@ -90,6 +93,22 @@ fn benchmark() {
     let now = Instant::now();
     astarcycle.solve_cycle();
     println!("Time to solve problems on second go: {:.2?}", now.elapsed());
+}
+
+fn benchmark_executers() {
+    let h =
+        parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
+    let heuristic = Heuristic { root: h };
+
+    let mut x = 0.0;
+    for _ in 0..10000 {
+        let context = inkwell::context::Context::create();
+        let jit = Jit::create(&heuristic, &context);
+        x += jit.execute(x, x, x, x);
+        drop(jit)
+    }
+
+    println!("{}", x);
 }
 
 /* Code for manually creating problems, rather than a single cycle */

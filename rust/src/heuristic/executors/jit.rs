@@ -1,27 +1,15 @@
+#![allow(clippy::too_many_arguments)]
+
 use inkwell::intrinsics::Intrinsic;
 use inkwell::{
-    builder::Builder,
-    context::{self, Context},
-    execution_engine::JitFunction,
-    module::Module,
-    types::FloatMathType,
-    types::{FloatType, FunctionType},
-    values::{AnyValue, FloatValue},
-    values::{FloatMathValue, FunctionValue},
-    OptimizationLevel,
+    builder::Builder, context::Context, execution_engine::JitFunction, types::FloatType,
+    values::FloatValue, values::FunctionValue, OptimizationLevel,
 };
 
-use std::{cell::RefCell, rc::Rc, sync::Arc, sync::Mutex};
-
 use crate::heuristic::{
-    executors::HeuristicExecuter,
     parser::{HeuristicNode, Rule},
     Heuristic,
 };
-
-// static con: inkwell::context::Context = context::Context::create();
-// thread safe
-// thread_local!(static CONTEXT: Context = context::Context::create());
 
 type HeuristicFunc = unsafe extern "C" fn(f32, f32, f32, f32) -> f32;
 
@@ -38,7 +26,6 @@ impl<'a> Jit<'a> {
         // let context = context::Context::create();
         // let mut module: Module;
         let module = context.create_module("heuristic");
-        // let module = context.create_module("heuristic");
 
         let builder = context.create_builder();
 
@@ -67,9 +54,6 @@ impl<'a> Jit<'a> {
         let y1 = function.get_nth_param(1).unwrap().into_float_value();
         let x2 = function.get_nth_param(2).unwrap().into_float_value();
         let y2 = function.get_nth_param(3).unwrap().into_float_value();
-
-        // let sqrt_fn_type = f32_type.fn_type(&[f32_type.into()], false);
-        // let sqrt_fn = module.add_function("llvm.cos.f32", sqrt_fn_type, None);
 
         let abs_intrinsic = Intrinsic::find("llvm.fabs.f32").unwrap();
         assert!(abs_intrinsic.get_declaration(&module, &[]).is_none());
@@ -110,17 +94,12 @@ impl<'a> Jit<'a> {
             )
             .unwrap();
 
-        // for node in ast {
-        //     let recursive_builder = RecursiveBuilder::new(i32_type, &builder);
-        //     let return_value = recursive_builder.build(&node);
-        //     let _ = builder.build_return(Some(&return_value));
-        // }
         {
             let recursive_builder = RecursiveBuilder::new(
                 // context,
                 //  &module,
                 &builder,
-                f32_type, // sqrt_fn_type,
+                f32_type,
                 &abs_fn,
                 &copysign_fn,
                 &sqrt_fn,
@@ -147,79 +126,11 @@ impl<'a> Jit<'a> {
     }
 }
 
-// fn build(
-//     context: &Context,
-//     builder: &Builder,
-//     node: &HeuristicNode,
-//     x1: FloatMathValue,
-//     y1: FloatMathValue,
-//     x2: FloatMathValue,
-//     y2: FloatMathValue,
-// ) -> FloatMathValue {
-//     // match node {
-//     //     HeuristicNode::Terminal(rule) => build_terminal(*rule, x1, y1, x2, y2),
-//     //     HeuristicNode::Unary(rule, h) => {
-//     //         build_unary(context, builder, module, *rule, &*h, x1, y1, x2, y2)
-//     //     }
-//     //     HeuristicNode::Binary(rule, h1, h2) => {
-//     //         // build_binary(context, builder, module, *rule, &*h1, &*h2, x1, y1, x2, y2)
-//     //         unreachable!("{:?}", rule);
-//     //     }
-//     // }
-//     unreachable!("{:?}", rule);
-// }
-
-// fn build_terminal(
-//     rule: Rule,
-//     x1: FloatMathValue,
-//     y1: FloatMathValue,
-//     x2: FloatMathValue,
-//     y2: FloatMathValue,
-// ) -> FloatMathValue {
-//     match rule {
-//         Rule::x1 => x1,
-//         Rule::y1 => y1,
-//         Rule::x2 => x2,
-//         Rule::y2 => y2,
-//         Rule::deltaX => x2 - x1,
-//         Rule::deltaY => y2 - y1,
-//         _ => {
-//             unreachable!("{:?}", rule);
-//         }
-//     }
-// }
-
-// fn build_unary(
-//     context: &Context,
-//     module: &Module,
-//     builder: &Builder,
-//     rule: Rule,
-//     h: &HeuristicNode,
-//     x1: FloatMathValue,
-//     y1: FloatMathValue,
-//     x2: FloatMathValue,
-//     y2: FloatMathValue,
-// ) -> FloatMathValue {
-//     let result = build(context, builder, module, h, x1, y1, x2, y2);
-//     match rule {
-//         Rule::neg => -result,
-//         Rule::abs => {
-//             // builder
-//         }
-//         Rule::sqrt => result.signum() * result.abs().sqrt(),
-//         Rule::sqr => result * result,
-//         _ => {
-//             unreachable!("{:?}", rule);
-//         }
-//     }
-// }
-
 struct RecursiveBuilder<'a> {
     // context: &'a Context,
     // module: &'a Module<'a>,
     builder: &'a Builder<'a>,
     f32_type: FloatType<'a>,
-    // sqrt_fn_type: FunctionType<'a>,
     abs_fn: &'a FunctionValue<'a>,
     copysign_fn: &'a FunctionValue<'a>,
     sqrt_fn: &'a FunctionValue<'a>,
@@ -237,7 +148,6 @@ impl<'a> RecursiveBuilder<'a> {
         // module: &'a Module<'a>,
         builder: &'a Builder<'a>,
         f32_type: FloatType<'a>,
-        // sqrt_fn_type: FunctionType<'a>,
         abs_fn: &'a FunctionValue<'a>,
         copysign_fn: &'a FunctionValue<'a>,
         sqrt_fn: &'a FunctionValue<'a>,
@@ -253,7 +163,6 @@ impl<'a> RecursiveBuilder<'a> {
             // module,
             builder,
             f32_type,
-            // sqrt_fn_type,
             abs_fn,
             copysign_fn,
             sqrt_fn,
@@ -270,7 +179,7 @@ impl<'a> RecursiveBuilder<'a> {
         match node {
             HeuristicNode::Terminal(rule) => self.build_terminal(*rule),
             HeuristicNode::Unary(rule, h) => self.build_unary(*rule, h),
-            HeuristicNode::Binary(rule, h1, h2) => self.build_binary(*rule, &*h1, &*h2),
+            HeuristicNode::Binary(rule, h1, h2) => self.build_binary(*rule, h1, h2),
         }
     }
 
@@ -306,12 +215,6 @@ impl<'a> RecursiveBuilder<'a> {
                 abs.try_as_basic_value().left().unwrap().into_float_value()
             }
             Rule::sqrt => {
-                // let cos = Intrinsic::find("llvm.cos.f32").unwrap();
-                // assert!(cos.get_declaration(self.module, &[]).is_none());
-                // let decl = cos
-                //     .get_declaration(self.module, &[self.context.f32_type().into()])
-                //     .unwrap();
-
                 let abs = self
                     .builder
                     .build_call(*self.abs_fn, &[result.into()], "abs")
@@ -333,28 +236,6 @@ impl<'a> RecursiveBuilder<'a> {
                     .left()
                     .unwrap()
                     .into_float_value()
-
-                // let out = self
-                //     .builder
-                //     .build_call(*self.sqrt_fn, &[result.into()], "sqrt")
-                //     .unwrap();
-                // out.try_as_basic_value().left().unwrap().into_float_value()
-
-                // let sqrt_fn = self.sqrt_fn;
-                // let sqrt_fn_type = self.sqrt_fn_type;
-                // let sqrt_fn_type = sqrt_fn_type.ptr_type(inkwell::AddressSpace::default());
-                // let sqrt_fn = self
-                //     .builder
-                //     .build_pointer_cast(sqrt_fn, sqrt_fn_type, "sqrt_fn");
-                // let result = self
-                //     .builder
-                //     .build_call(sqrt_fn, &[result.into()], "sqrt")
-                //     .unwrap();
-                // result
-                //     .try_as_basic_value()
-                //     .left()
-                //     .unwrap()
-                //     .into_float_value()
             }
             Rule::sqr => self.builder.build_float_mul(result, result, "sqr").unwrap(),
             _ => {
@@ -403,44 +284,3 @@ impl<'a> RecursiveBuilder<'a> {
         }
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::HeuristicExecuter;
-//     use super::Jit;
-//     use crate::heuristic::parser::{HeuristicNode, Rule};
-//     use crate::heuristic::Heuristic;
-
-//     use inkwell::context;
-//     use test_case::test_case;
-
-//     #[test_case( HeuristicNode::Terminal(Rule::x1), (1.0, 2.0, 3.0, 4.0), 1.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::x2), (1.0, 2.0, 3.0, 4.0), 3.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::y1), (1.0, 2.0, 3.0, 4.0), 2.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::y2), (1.0, 2.0, 3.0, 4.0), 4.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::deltaX), (1.0, 2.0, 3.0, 5.0), 2.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::deltaX), (3.0, 2.0, 1.0, 5.0), -2.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::deltaY), (1.0, 2.0, 3.0, 5.0), 3.0)]
-//     #[test_case( HeuristicNode::Terminal(Rule::deltaY), (3.0, 2.0, 1.0, 5.0), 3.0)]
-//     #[test_case( HeuristicNode::Unary(Rule::neg, Box::new(HeuristicNode::Terminal(Rule::x1))), (1.0, 2.0, 3.0, 4.0), -1.0)]
-//     #[test_case( HeuristicNode::Unary(Rule::abs, Box::new(HeuristicNode::Terminal(Rule::x1))), (1.0, 2.0, 3.0, 4.0), 1.0)]
-//     #[test_case( HeuristicNode::Unary(Rule::sqrt, Box::new(HeuristicNode::Terminal(Rule::x1))), (1.0, 2.0, 3.0, 4.0), 1.0)]
-//     #[test_case( HeuristicNode::Unary(Rule::sqrt, Box::new(HeuristicNode::Unary(Rule::neg, Box::new(HeuristicNode::Terminal(Rule::y2))))), (1.0, 2.0, 3.0, 4.0), -2.0)]
-//     #[test_case( HeuristicNode::Binary(Rule::plus, Box::new(HeuristicNode::Terminal(Rule::x1)), Box::new(HeuristicNode::Terminal(Rule::x2))), (1.0, 2.0, 3.0, 4.0), 4.0)]
-//     #[test_case( HeuristicNode::Binary(Rule::minus, Box::new(HeuristicNode::Terminal(Rule::x1)), Box::new(HeuristicNode::Terminal(Rule::x2))), (1.0, 2.0, 3.0, 4.0), -2.0)]
-//     #[test_case( HeuristicNode::Binary(Rule::mul, Box::new(HeuristicNode::Terminal(Rule::x1)), Box::new(HeuristicNode::Terminal(Rule::y1))), (1.0, 2.0, 3.0, 4.0), 2.0)]
-//     #[test_case( HeuristicNode::Binary(Rule::div, Box::new(HeuristicNode::Terminal(Rule::x1)), Box::new(HeuristicNode::Terminal(Rule::y1))), (1.0, 2.0, 3.0, 4.0), 0.5)]
-//     #[test_case( HeuristicNode::Binary(Rule::max, Box::new(HeuristicNode::Terminal(Rule::x1)), Box::new(HeuristicNode::Terminal(Rule::y2))), (1.0, 2.0, 3.0, 4.0), 4.0)]
-//     #[test_case( HeuristicNode::Binary(Rule::min, Box::new(HeuristicNode::Terminal(Rule::x1)), Box::new(HeuristicNode::Terminal(Rule::y2))), (1.0, 2.0, 3.0, 4.0), 1.0)]
-//     fn test_evaluate_heuristic(
-//         heuristic: HeuristicNode,
-//         (x1, y1, x2, y2): (f32, f32, f32, f32),
-//         expected: f32,
-//     ) {
-//         let context = context::Context::create();
-
-//         let jit = Jit::create(&Heuristic { root: heuristic }, &context);
-//         let result = jit.execute(x1, y1, x2, y2);
-//         assert_eq!(result, expected);
-//     }
-// }
