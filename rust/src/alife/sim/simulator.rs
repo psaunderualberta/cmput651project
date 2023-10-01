@@ -1,26 +1,31 @@
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
 use crate::constants::INITIAL_H_POPULATION_SIZE;
+use crate::heuristic::mutator::mutate_heuristic;
 use crate::heuristic::parser::HeuristicNode;
 use crate::heuristic::util::random_heuristic;
 use crate::map::util::Map;
 
-pub struct SimulationResult {
-    pub heuristics: HashMap<HeuristicNode, usize>,
-    pub best: HeuristicNode,
-    pub score: usize,
-}
+use super::expansion_tracker::ExpansionTracker;
 
 pub struct Simulation<'a> {
     pub map: &'a Map,
     pub cycle: ProblemCycle,
     pub baseline: &'a CycleSolver<'a>,
-    pub expansion_bound: f64,
-    pub degredation_rate: f64,
-    pub solvers: HashMap<i32, CycleSolver<'a>>,
-    pub results: HashMap<HeuristicNode, usize>,
+    pub expansion_bound: usize,
+    pub time_limit: Duration,
+    pub trackers: HashMap<i32, ExpansionTracker>,
+    pub results: HashMap<HeuristicNode, f64>,
     pub limits: HashMap<i32, i32>,
+    verbose: bool,
+}
+
+pub struct SimulationResult {
+    pub heuristics: HashMap<HeuristicNode, f64>,
+    pub best: HeuristicNode,
+    pub score: f64,
 }
 
 impl Simulation<'_> {
@@ -28,85 +33,94 @@ impl Simulation<'_> {
         map: &'a Map,
         cycle: ProblemCycle,
         baseline: &'a CycleSolver,
-        expansion_bound_multiple: f64,
-        degredation_rate: f64,
+        expansion_bound: usize,
+        time_limit: Duration,
         seed: Option<u64>,
+        verbose: bool,
     ) -> Simulation<'a> {
         if seed.is_some() {
             fastrand::seed(seed.unwrap());
         }
-
-        // Get the initial starting bound
-        let expansion_bound = expansion_bound_multiple * (baseline.get_expansions_in_single_cycle() as f64);
-
 
         Simulation {
             map,
             cycle,
             baseline,
             expansion_bound,
-            degredation_rate,
+            time_limit,
             results: HashMap::new(),
-            solvers: HashMap::new(),
+            trackers: HashMap::new(),
             limits: HashMap::new(),
+            verbose,
         }
     }
 
     pub fn run(&mut self) -> SimulationResult {
         let mut heuristic_id = 0;
 
-        // Create the initial population of solvers
-        for _ in 0..INITIAL_H_POPULATION_SIZE {
+        // Create the initial population of trackers
+        for i in 0..INITIAL_H_POPULATION_SIZE {
+            println!("{}", i);
             let h = random_heuristic(-1);
-            let cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h);
-            self.solvers.insert(heuristic_id, cycle);
+            let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h.clone());
+            let results = cycle.solve_cycle();
+            let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
+            self.results.insert(h.clone(), tracker.get_expansion_average());
+            self.trackers.insert(heuristic_id, tracker);
             heuristic_id += 1;
         }
 
+        let timer = Instant::now();
+
         // While there are still some problems to solve
-        while !self.solvers.is_empty() {
-            // Exponential decay rate
-            self.expansion_bound = self.expansion_bound * self.degredation_rate;
+        let mut num_expansion_steps: usize = 0;
+        while timer.elapsed() < self.time_limit {
+            if self.verbose && num_expansion_steps % 100000 == 0 {
+                println!("Elapsed Time: {:?}", timer.elapsed());
+            }
 
-            let keys: Vec<i32> = self.solvers.keys().map(|x| *x).collect();
+            num_expansion_steps += 1;
 
-            // Iterate over the sets of solvers
+            let keys: Vec<i32> = self.trackers.keys().map(|x| *x).collect();
+
+            // Iterate over the sets of trackers
             for key in keys {
                 // Get the current solver
-                let cur_solver = self.solvers.get_mut(&key).unwrap();
+                let cur_tracker = self.trackers.get_mut(&key).unwrap();
 
-                // Solve one problem on this specific cycle
-                let solve_result = cur_solver.solve_current();
-                if solve_result.bound_exceeded {
-                    // Record the # of expansions made by the heuristic within a single cycle
-                    let exp_per_cycle = cur_solver.get_expansions_in_single_cycle();
-                    let h = cur_solver.get_heuristic();
-                    self.results.insert(h, exp_per_cycle);
-
-                    // This cycle has no more mutations left
-                    self.solvers.remove(&key);
+                // Perform one mimicked expansion
+                cur_tracker.expand();
+                if cur_tracker.expired() {
+                    // This cycle has no more expansions left
+                    self.trackers.remove(&key);
                 } else {
-                    // Increment the solver to the next problem
-                    cur_solver.next_problem();
-
                     // If we are able to perform a mutation, do it and add
-                    // the new cycle + heuristic to the set of solvers
-                    if cur_solver.able_to_mutate() {
-                        let h = cur_solver.get_mutated_heuristic();
-                        let new_cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h);
-                        self.solvers.insert(heuristic_id, new_cycle);
+                    // the new cycle + heuristic to the set of trackers
+                    if cur_tracker.consume_mutation() {
+                        if self.verbose {
+                            println!("Mutating heuristic with id {}", key);
+                        }
+
+                        let h = cur_tracker.get_heuristic();
+                        let h_mutated = mutate_heuristic(&h);
+                        let mut new_cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h_mutated.clone());
+                        let results = new_cycle.solve_cycle();
+                        let new_tracker = ExpansionTracker::new(results, self.expansion_bound, h_mutated);
+                        self.trackers.insert(heuristic_id, new_tracker);
                         heuristic_id += 1;
                     }
                 }
             }
         }
 
+        println!("Num expansion steps: {}", num_expansion_steps);
+
         // Get the best heuristic for quick reference when returned.
         let mut best_heuristic = random_heuristic(1);
-        let mut best_exp_per_cycle = usize::MAX;
+        let mut best_exp_per_cycle = f64::MAX;
         for heuristic in self.results.keys() {
             let exp_per_cycle = *self.results.get(heuristic).unwrap();
-            if exp_per_cycle < best_exp_per_cycle {
+            if exp_per_cycle.min(best_exp_per_cycle) == exp_per_cycle {
                 best_exp_per_cycle = exp_per_cycle;
                 best_heuristic = heuristic.clone();
             }

@@ -3,6 +3,8 @@ mod constants;
 mod heuristic;
 mod map;
 
+use std::time::Duration;
+
 use alife::search::problem::Problem;
 use heuristic::mutator::mutate_heuristic;
 use heuristic::parser::parse_heuristic;
@@ -13,15 +15,16 @@ use map::util::Maps;
 use crate::alife::search::cycle::CycleSolver;
 
 fn main() {
-    let choice = 2;
+    let choice = 4;
 
     match choice {
         0 => heuristic_demo(),
         1 => map_demo(),
         2 => search_demo(),
         3 => benchmark(),
+        4 => alife_demo(),
         _ => {
-            unreachable!();
+            unreachable!("Invalid choice in function `main`. Please choose from 0-4");
         }
     }
 }
@@ -90,6 +93,12 @@ fn benchmark() {
     let now = Instant::now();
     astarcycle.solve_cycle();
     println!("Time to solve problems on second go: {:.2?}", now.elapsed());
+}
+
+fn alife_demo() {
+    let map = &parse_map_file(Maps::Den312d.value());
+
+    alife::alife(map, Duration::from_secs(60));
 }
 
 /* Code for manually creating problems, rather than a single cycle */

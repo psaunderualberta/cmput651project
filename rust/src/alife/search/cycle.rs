@@ -1,6 +1,4 @@
-use crate::heuristic::mutator::mutate_heuristic;
 use crate::{heuristic::parser::HeuristicNode, map::util::Map};
-use crate::constants::MUTATION_INTERVAL;
 use super::problem::{Problem, ProblemResult};
 
 #[derive(Clone)]
@@ -52,7 +50,6 @@ pub struct CycleSolver<'a> {
     results: Vec<Option<ProblemResult>>,
     problems: ProblemCycle,
     problem_index: usize,
-    can_mutate: bool
 }
 
 impl CycleSolver<'_> {
@@ -68,23 +65,26 @@ impl CycleSolver<'_> {
             results: vec![None; problems.len()],
             problem_index: 0,
             problems,
-            can_mutate: false,
         }
     }
 
-    pub fn solve_cycle(&mut self) -> () {
+    pub fn solve_cycle(&mut self) -> Vec<ProblemResult> {
         let mut num_solved = 0;
+
+        // TODO: Parallelize this(?)
         while num_solved != self.problems.len() {
             self.solve_current();
             self.next_problem();
             num_solved += 1;
         }
+
+        self.results.clone().into_iter().map(|r| r.unwrap()).collect()
     }
 
-    // Return value is whether the 'step' resulted in a problem being solved
     pub fn solve_current(&mut self) -> ProblemResult {
         if self.results[self.problem_index].is_none() {
             let problem = self.problems.get(self.problem_index);
+
             self.results[self.problem_index] = Some(problem.solve(self.map, &self.h));
         };
 
@@ -93,35 +93,15 @@ impl CycleSolver<'_> {
 
     pub fn next_problem(&mut self) -> () {
         self.problem_index = (self.problem_index + 1) % self.problems.len();
-        if self.problem_index % MUTATION_INTERVAL == 0 {
-            self.can_mutate = true;
-        }
     }
 
-    pub fn get_expansions_in_single_cycle(&self) -> usize {
+    pub fn get_total_expansions_in_cycle(&self) -> usize {
         if self.results.clone().into_iter().any(|r| r.is_none()) {
-            return 0;
+            return usize::MAX;
         }
 
         self.results.clone().into_iter()
             .map(|r| r.unwrap().expansions.len())
             .sum()
-    }
-
-    pub fn get_mutated_heuristic(&mut self) -> HeuristicNode {
-        if !self.can_mutate {
-            panic!("Trying to mutate a heuristic {} when not possible!!!", &self.h);
-        }
-
-        self.can_mutate = false;
-        mutate_heuristic(&self.h)
-    }
-
-    pub fn able_to_mutate(&self) -> bool {
-        self.can_mutate
-    }
-
-    pub fn get_heuristic(&self) -> HeuristicNode {
-        self.h.clone()
     }
 }
