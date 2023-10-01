@@ -3,6 +3,8 @@ mod constants;
 mod heuristic;
 mod map;
 
+use std::time::Duration;
+
 use alife::search::problem::Problem;
 use heuristic::executors::jit::Jit;
 use heuristic::mutator::mutate_heuristic;
@@ -13,18 +15,19 @@ use map::parser::parse_map_file;
 use map::util::Maps;
 
 use crate::alife::search::cycle::CycleSolver;
+use crate::constants::PROBLEM_CYCLE_LENGTH;
 
 fn main() {
-    let choice = 3;
+    let choice = 5;
 
     match choice {
         0 => heuristic_demo(),
         1 => map_demo(),
         2 => search_demo(),
         3 => benchmark(),
-        4 => benchmark_executers(),
+        5 => alife_demo(),
         _ => {
-            unreachable!();
+            unreachable!("Invalid choice in function `main`. Please choose from 0-4");
         }
     }
 }
@@ -81,8 +84,8 @@ fn benchmark() {
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 
     // Create problems
-    let num_problems = 10000;
-    let mut astarcycle = CycleSolver::new(&map, &h, num_problems);
+    let num_problems = PROBLEM_CYCLE_LENGTH;
+    let mut astarcycle = CycleSolver::new(&map, h, num_problems);
 
     // Perform first solve
     let now = Instant::now();
@@ -109,6 +112,12 @@ fn benchmark_executers() {
     }
 
     println!("{}", x);
+}
+
+fn alife_demo() {
+    let map = &parse_map_file(Maps::Den312d.value());
+
+    alife::alife(map, Duration::from_secs(60 * 5));
 }
 
 /* Code for manually creating problems, rather than a single cycle */

@@ -4,6 +4,7 @@ use std::cmp::*;
 
 pub fn heuristic_size(heuristic: &HeuristicNode) -> i32 {
     match heuristic {
+        HeuristicNode::Number(_) => 1,
         HeuristicNode::Terminal(_) => 1,
         HeuristicNode::Unary(_, heuristic) => 1 + heuristic_size(heuristic),
         HeuristicNode::Binary(_, left, right) => 1 + heuristic_size(left) + heuristic_size(right),
@@ -12,6 +13,7 @@ pub fn heuristic_size(heuristic: &HeuristicNode) -> i32 {
 
 pub fn heuristic_depth(heuristic: &HeuristicNode) -> i32 {
     match heuristic {
+        HeuristicNode::Number(_) => 1,
         HeuristicNode::Terminal(_) => 1,
         HeuristicNode::Unary(_, heuristic) => 1 + heuristic_depth(heuristic),
         HeuristicNode::Binary(_, left, right) => {
@@ -28,7 +30,11 @@ pub fn random_heuristic(hsize: i32) -> HeuristicNode {
 
     // Base cases
     if hsize == 1 {
-        return random_terminal();
+        return match fastrand::i32(0..=1) {
+            0 => random_terminal(),
+            1 => random_number(),
+            other => {unreachable!("{:?}", other)}
+        };
     } else if hsize == 2 {
         // with a heuristic size of 2, we can only have unary -> terminal
         // we can't have a binary, since that implies at least 3 terms
@@ -42,6 +48,10 @@ pub fn random_heuristic(hsize: i32) -> HeuristicNode {
             unreachable!()
         }
     }
+}
+
+fn random_number() -> HeuristicNode {
+    HeuristicNode::Number(fastrand::i32(1..=9))
 }
 
 fn random_terminal() -> HeuristicNode {

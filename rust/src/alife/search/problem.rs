@@ -11,6 +11,7 @@ use crate::{
 };
 use colored::*;
 
+#[derive(Clone)]
 pub struct Problem {
     pub start: usize,
     pub goal: usize,
@@ -97,10 +98,11 @@ impl Problem {
             }
         }
 
+        let solution_path = self.get_path(parents);
         ProblemResult {
             expansions,
             num_traversals,
-            solution_path: self.get_path(parents),
+            solution_path,
             solved,
         }
     }

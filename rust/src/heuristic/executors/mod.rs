@@ -19,6 +19,8 @@ mod tests {
 
     use test_case::test_case;
 
+    #[test_case ( HeuristicNode::Number(1), (1.0, 2.0, 3.0, 4.0), 1.0)]
+    #[test_case ( HeuristicNode::Number(9), (1.0, 2.0, 3.0, 4.0), 9.0)]
     #[test_case( HeuristicNode::Terminal(Rule::x1), (1.0, 2.0, 3.0, 4.0), 1.0)]
     #[test_case( HeuristicNode::Terminal(Rule::x2), (1.0, 2.0, 3.0, 4.0), 3.0)]
     #[test_case( HeuristicNode::Terminal(Rule::y1), (1.0, 2.0, 3.0, 4.0), 2.0)]

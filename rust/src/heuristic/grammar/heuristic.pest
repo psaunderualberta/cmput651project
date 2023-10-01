@@ -23,7 +23,11 @@ deltaX      = { "deltaX" }
 deltaY      = { "deltaY" }
 terminal    = { x1 | x2 | y1 | y2 | deltaX | deltaY }
 
+// number
+number      = { ASCII_NONZERO_DIGIT }
+
 heuristic = {   ("(" ~ binary ~ " " ~ heuristic ~ " " ~ heuristic ~ ")") | 
                 ("(" ~ unary ~ " " ~ heuristic ~ ")") |
-                terminal
+                terminal | 
+                number
 }

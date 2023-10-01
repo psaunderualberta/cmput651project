@@ -18,8 +18,10 @@ impl HeuristicExecuter for Interpreter {
     fn execute(&self, x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
         let executor = RecursiveExecutor { x1, y1, x2, y2 };
         let val = executor.evaluate_node(&self.node);
-        assert!(!val.is_nan());
-        val
+        match val.is_nan() {
+            true => f32::MAX,
+            false => val,
+        }
     }
 }
 
@@ -33,6 +35,7 @@ struct RecursiveExecutor {
 impl RecursiveExecutor {
     fn evaluate_node(&self, node: &HeuristicNode) -> f32 {
         match node {
+            HeuristicNode::Number(num) => *num as f32,
             HeuristicNode::Terminal(rule) => self.evaluate_terminal(*rule),
             HeuristicNode::Unary(rule, h) => self.evaluate_unary(*rule, h),
             HeuristicNode::Binary(rule, h1, h2) => self.evaluate_binary(*rule, h1, h2),
