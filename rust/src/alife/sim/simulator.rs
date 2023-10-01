@@ -70,13 +70,13 @@ impl Simulation<'_> {
             heuristic_id += 1;
         }
 
+        let mut num_expansion_steps: usize = 0;
         let timer = Instant::now();
 
-        // While there are still some problems to solve
-        let mut num_expansion_steps: usize = 0;
-        while timer.elapsed() < self.time_limit {
+        // While we have not reached timeout
+        while self.trackers.keys().len() != 0 && timer.elapsed() < self.time_limit {
             if self.verbose && num_expansion_steps % 100000 == 0 {
-                println!("Elapsed Time: {:?}", timer.elapsed());
+                println!("-1: {:?}", timer.elapsed());
             }
 
             num_expansion_steps += 1;
@@ -88,25 +88,34 @@ impl Simulation<'_> {
                 // Get the current solver
                 let cur_tracker = self.trackers.get_mut(&key).unwrap();
 
-                // Perform one mimicked expansion
+                // Ensure not expired
+                assert!(!cur_tracker.expired());
+
+                // Perform one mimicked expansion of a state
                 cur_tracker.expand();
                 if cur_tracker.expired() {
-                    // This cycle has no more expansions left
+                    if self.verbose {
+                        println!("{key}: K");
+                    }
+
+                    // This cycle has no more expansions left. Kill it >:)
                     self.trackers.remove(&key);
                 } else {
                     // If we are able to perform a mutation, do it and add
                     // the new cycle + heuristic to the set of trackers
                     if cur_tracker.consume_mutation() {
-                        if self.verbose {
-                            println!("Mutating heuristic with id {}", key);
-                        }
-
+                        
                         let h = cur_tracker.get_heuristic();
                         let h_mutated = mutate_heuristic(&h);
                         let mut new_cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h_mutated.clone());
                         let results = new_cycle.solve_cycle();
                         let new_tracker = ExpansionTracker::new(results, self.expansion_bound, h_mutated);
                         self.trackers.insert(heuristic_id, new_tracker);
+
+                        if self.verbose {
+                            println!("{key}: M -> {heuristic_id}");
+                        }
+
                         heuristic_id += 1;
                     }
                 }

@@ -34,6 +34,7 @@ impl ExpansionTracker {
         }
 
         self.current_tracked_expansions += 1;
+        self.total_expansions += 1;
     }
 
     pub fn get_expansion_average(&self) -> f64 {
