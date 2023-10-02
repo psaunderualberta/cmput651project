@@ -65,7 +65,8 @@ impl Simulation<'_> {
             let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h.clone());
             let results = cycle.solve_cycle();
             let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
-            self.results.insert(h.clone(), tracker.get_expansion_average());
+            self.results
+                .insert(h.clone(), tracker.get_expansion_average());
             self.trackers.insert(heuristic_id, tracker);
             heuristic_id += 1;
         }
@@ -104,12 +105,16 @@ impl Simulation<'_> {
                     // If we are able to perform a mutation, do it and add
                     // the new cycle + heuristic to the set of trackers
                     if cur_tracker.consume_mutation() {
-                        
                         let h = cur_tracker.get_heuristic();
                         let h_mutated = mutate_heuristic(&h);
-                        let mut new_cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h_mutated.clone());
+                        let mut new_cycle = CycleSolver::from_cycle(
+                            self.cycle.clone(),
+                            self.map,
+                            h_mutated.clone(),
+                        );
                         let results = new_cycle.solve_cycle();
-                        let new_tracker = ExpansionTracker::new(results, self.expansion_bound, h_mutated);
+                        let new_tracker =
+                            ExpansionTracker::new(results, self.expansion_bound, h_mutated);
                         self.trackers.insert(heuristic_id, new_tracker);
 
                         if self.verbose {

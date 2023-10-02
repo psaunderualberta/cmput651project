@@ -110,7 +110,7 @@ impl Problem {
     // Gets the completed path
     fn get_path(&self, parents: Vec<Option<usize>>) -> Vec<usize> {
         let mut path = Vec::new();
-        if path.len() == 0 {
+        if path.is_empty() {
             let mut cur = self.goal;
             path.push(cur);
 
@@ -125,7 +125,7 @@ impl Problem {
     }
 
     // Prints the completed search path on the map
-    pub fn print_path_on_map(&self, map: &Map, path: Vec<usize>) -> () {
+    pub fn print_path_on_map(&self, map: &Map, path: Vec<usize>) {
         for i in 0..map.map.len() {
             if i == self.start {
                 print!("{}", "S".blue().bold());

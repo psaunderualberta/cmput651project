@@ -18,14 +18,15 @@ use crate::alife::search::cycle::CycleSolver;
 use crate::constants::PROBLEM_CYCLE_LENGTH;
 
 fn main() {
-    let choice = 5;
+    let choice = 6;
 
     match choice {
         0 => heuristic_demo(),
         1 => map_demo(),
         2 => search_demo(),
         3 => benchmark(),
-        5 => alife_demo(),
+        5 => benchmark_executers(),
+        6 => alife_demo(),
         _ => {
             unreachable!("Invalid choice in function `main`. Please choose from 0-4");
         }

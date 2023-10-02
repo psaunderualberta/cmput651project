@@ -26,7 +26,7 @@ mod tests {
     #[test_case( HeuristicNode::Terminal(Rule::y1), (1.0, 2.0, 3.0, 4.0), 2.0)]
     #[test_case( HeuristicNode::Terminal(Rule::y2), (1.0, 2.0, 3.0, 4.0), 4.0)]
     #[test_case( HeuristicNode::Terminal(Rule::deltaX), (1.0, 2.0, 3.0, 5.0), 2.0)]
-    #[test_case( HeuristicNode::Terminal(Rule::deltaX), (3.0, 2.0, 1.0, 5.0), -2.0)]
+    #[test_case( HeuristicNode::Terminal(Rule::deltaX), (3.0, 2.0, 1.0, 5.0), 2.0)]
     #[test_case( HeuristicNode::Terminal(Rule::deltaY), (1.0, 2.0, 3.0, 5.0), 3.0)]
     #[test_case( HeuristicNode::Terminal(Rule::deltaY), (3.0, 2.0, 1.0, 5.0), 3.0)]
     #[test_case( HeuristicNode::Unary(Rule::neg, Box::new(HeuristicNode::Terminal(Rule::x1))), (1.0, 2.0, 3.0, 4.0), -1.0)]

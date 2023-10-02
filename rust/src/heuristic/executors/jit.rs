@@ -177,6 +177,7 @@ impl<'a> RecursiveBuilder<'a> {
 
     pub fn build(&self, node: &HeuristicNode) -> FloatValue {
         match node {
+            HeuristicNode::Number(num) => self.f32_type.const_float(*num as f64),
             HeuristicNode::Terminal(rule) => self.build_terminal(*rule),
             HeuristicNode::Unary(rule, h) => self.build_unary(*rule, h),
             HeuristicNode::Binary(rule, h1, h2) => self.build_binary(*rule, h1, h2),
@@ -189,14 +190,30 @@ impl<'a> RecursiveBuilder<'a> {
             Rule::y1 => *self.y1,
             Rule::x2 => *self.x2,
             Rule::y2 => *self.y2,
-            Rule::deltaX => self
-                .builder
-                .build_float_sub(*self.x2, *self.x1, "deltaX")
-                .unwrap(),
-            Rule::deltaY => self
-                .builder
-                .build_float_sub(*self.y2, *self.y1, "deltaY")
-                .unwrap(),
+            Rule::deltaX => {
+                let deltax = self
+                    .builder
+                    .build_float_sub(*self.x2, *self.x1, "deltaX")
+                    .unwrap();
+
+                let abs = self
+                    .builder
+                    .build_call(*self.abs_fn, &[deltax.into()], "abs")
+                    .unwrap();
+                abs.try_as_basic_value().left().unwrap().into_float_value()
+            }
+            Rule::deltaY => {
+                let deltay = self
+                    .builder
+                    .build_float_sub(*self.y2, *self.y1, "deltaY")
+                    .unwrap();
+
+                let abs = self
+                    .builder
+                    .build_call(*self.abs_fn, &[deltay.into()], "abs")
+                    .unwrap();
+                abs.try_as_basic_value().left().unwrap().into_float_value()
+            }
             _ => {
                 unreachable!("{:?}", rule);
             }
