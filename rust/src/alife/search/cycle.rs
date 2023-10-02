@@ -1,5 +1,6 @@
-use crate::{heuristic::parser::HeuristicNode, map::util::Map};
 use super::problem::{Problem, ProblemResult};
+use crate::{heuristic::parser::HeuristicNode, map::util::Map};
+use rayon::prelude::*;
 
 #[derive(Clone)]
 pub struct ProblemCycle {
@@ -29,9 +30,7 @@ impl ProblemCycle {
             goal: original_start,
         });
 
-        ProblemCycle {
-            problems,
-        }
+        ProblemCycle { problems }
     }
 
     pub fn len(&self) -> usize {
@@ -58,10 +57,14 @@ impl CycleSolver<'_> {
         Self::from_cycle(pcycle, map, h)
     }
 
-    pub fn from_cycle<'a>(problems: ProblemCycle, map: &'a Map, h: HeuristicNode) -> CycleSolver<'a> {
+    pub fn from_cycle<'a>(
+        problems: ProblemCycle,
+        map: &'a Map,
+        h: HeuristicNode,
+    ) -> CycleSolver<'a> {
         CycleSolver {
             h,
-            map, 
+            map,
             results: vec![None; problems.len()],
             problem_index: 0,
             problems,
@@ -69,38 +72,46 @@ impl CycleSolver<'_> {
     }
 
     pub fn solve_cycle(&mut self) -> Vec<ProblemResult> {
-        let mut num_solved = 0;
+        // Parallel problem solving :)
+        self.results
+            .par_iter_mut()
+            .enumerate()
+            .for_each(|(idx, result)| {
+                if result.is_none() {
+                    let problem = self.problems.get(idx);
+                    *result = Some(problem.solve(self.map, &self.h));
+                }
+            });
 
-        // TODO: Parallelize this(?)
-        while num_solved != self.problems.len() {
-            self.solve_current();
-            self.next_problem();
-            num_solved += 1;
-        }
-
-        self.results.clone().into_iter().map(|r| r.unwrap()).collect()
+        self.results
+            .clone()
+            .into_iter()
+            .map(|r| r.unwrap())
+            .collect()
     }
 
-    pub fn solve_current(&mut self) -> ProblemResult {
-        if self.results[self.problem_index].is_none() {
-            let problem = self.problems.get(self.problem_index);
+    // pub fn solve_current(&mut self) -> ProblemResult {
+    //     if self.results[self.problem_index].is_none() {
+    //         let problem = self.problems.get(self.problem_index);
 
-            self.results[self.problem_index] = Some(problem.solve(self.map, &self.h));
-        };
+    //         self.results[self.problem_index] = Some(problem.solve(self.map, &self.h));
+    //     };
 
-        self.results[self.problem_index].clone().unwrap()
-    }
+    //     self.results[self.problem_index].clone().unwrap()
+    // }
 
-    pub fn next_problem(&mut self) -> () {
-        self.problem_index = (self.problem_index + 1) % self.problems.len();
-    }
+    // pub fn next_problem(&mut self) -> () {
+    //     self.problem_index = (self.problem_index + 1) % self.problems.len();
+    // }
 
     pub fn get_total_expansions_in_cycle(&self) -> usize {
         if self.results.clone().into_iter().any(|r| r.is_none()) {
             return usize::MAX;
         }
 
-        self.results.clone().into_iter()
+        self.results
+            .clone()
+            .into_iter()
             .map(|r| r.unwrap().expansions.len())
             .sum()
     }
