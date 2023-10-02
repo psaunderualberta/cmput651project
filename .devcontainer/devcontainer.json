@@ -1,9 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
-
 // Ref if devcontainer doesn't have access to ssh keys:
 // https://superuser.com/questions/1726204/get-agent-identities-ssh-agent-bind-hostkey-communication-with-agent-failed/1744159#1744159
-
 {
   "name": "ubuntu",
   "build": {
@@ -25,7 +23,9 @@
         "ms-python.isort",
         "eamodio.gitlens",
         "github.copilot",
-        "rust-lang.rust-analyzer"
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "serayuzgur.crates"
       ]
     }
   }

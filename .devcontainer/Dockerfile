@@ -41,6 +41,7 @@ RUN apt-get update && apt-get upgrade -q -y && \
     python3-apt \
     python3-pip \
     python3-dev \
+    python3-venv \
     libpython3-dev \
     && rm -rf /var/lib/apt/lists/* && apt-get clean
 
@@ -49,6 +50,8 @@ RUN locale-gen en_US en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV PYTHONIOENCODING=utf-8
+
+ENV PYTHONPATH="/workspaces/cmput651project/rust/target/release:/workspaces/cmput651project/rust/target/debug"
 
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 
