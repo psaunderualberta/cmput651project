@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub struct ExpansionTracker {
-    pub results: Vec<ProblemResult>,
+    pub expansions: Vec<usize>,
     pub total_expansions: usize,
     pub bound: usize,
     pub current_tracked_expansions: usize,
@@ -15,8 +15,9 @@ pub struct ExpansionTracker {
 
 impl ExpansionTracker {
     pub fn new(results: Vec<ProblemResult>, bound: usize, heuristic: HeuristicNode) -> ExpansionTracker {
+        let expansions = results.iter().map(|r| r.expansions.len()).collect();
         ExpansionTracker {
-            results,
+            expansions,
             total_expansions: 0,
             current_tracked_expansions: 0,
             bound,
@@ -27,8 +28,8 @@ impl ExpansionTracker {
     }
 
     pub fn expand(&mut self) {
-        if self.results[self.problem_index].expansions.len() == self.current_tracked_expansions {
-            self.problem_index = (self.problem_index + 1) % self.results.len();
+        if self.expansions.len() == self.current_tracked_expansions {
+            self.problem_index = (self.problem_index + 1) % self.expansions.len();
             self.can_mutate = self.problem_index % MUTATION_INTERVAL == 0;
             self.current_tracked_expansions = 0;
         }
@@ -38,10 +39,7 @@ impl ExpansionTracker {
     }
 
     pub fn get_expansion_average(&self) -> f64 {
-        self.results
-            .iter()
-            .fold(0.0, |acc, result| acc + result.expansions.len() as f64)
-            / self.results.len() as f64
+        self.expansions.iter().sum::<usize>() as f64 / self.expansions.len() as f64
     }
 
     pub fn get_heuristic(&self) -> HeuristicNode {

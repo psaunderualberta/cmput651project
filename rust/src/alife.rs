@@ -2,7 +2,6 @@ pub mod search;
 pub mod sim;
 
 use std::time::Duration;
-
 use crate::alife::search::cycle::ProblemCycle;
 use crate::alife::sim::simulator::Simulation;
 use crate::constants::PROBLEM_CYCLE_LENGTH;

@@ -48,7 +48,6 @@ pub struct CycleSolver<'a> {
     h: HeuristicNode,
     results: Vec<Option<ProblemResult>>,
     problems: ProblemCycle,
-    problem_index: usize,
 }
 
 impl CycleSolver<'_> {
@@ -66,7 +65,6 @@ impl CycleSolver<'_> {
             h,
             map,
             results: vec![None; problems.len()],
-            problem_index: 0,
             problems,
         }
     }

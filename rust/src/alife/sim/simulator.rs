@@ -82,9 +82,8 @@ impl Simulation<'_> {
 
             num_expansion_steps += 1;
 
-            let keys: Vec<i32> = self.trackers.keys().map(|x| *x).collect();
-
             // Iterate over the sets of trackers
+            let keys: Vec<i32> = self.trackers.keys().map(|x| *x).collect();
             for key in keys {
                 // Get the current solver
                 let cur_tracker = self.trackers.get_mut(&key).unwrap();
@@ -107,12 +106,12 @@ impl Simulation<'_> {
                     if cur_tracker.consume_mutation() {
                         let h = cur_tracker.get_heuristic();
                         let h_mutated = mutate_heuristic(&h);
-                        let mut new_cycle = CycleSolver::from_cycle(
+                        let results = CycleSolver::from_cycle(
                             self.cycle.clone(),
                             self.map,
                             h_mutated.clone(),
-                        );
-                        let results = new_cycle.solve_cycle();
+                        )
+                        .solve_cycle();
                         let new_tracker =
                             ExpansionTracker::new(results, self.expansion_bound, h_mutated);
                         self.trackers.insert(heuristic_id, new_tracker);
