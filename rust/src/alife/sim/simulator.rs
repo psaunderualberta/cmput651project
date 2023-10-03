@@ -23,8 +23,13 @@ pub struct Simulation<'a> {
 }
 
 pub struct SimulationResult {
+    // Mapping from each heuristic to the average # of expansions per cycle
     pub heuristics: HashMap<HeuristicNode, f64>,
+
+    // The best heuristic found in terms of expansions per cycle
     pub best: HeuristicNode,
+
+    // The score of the best heuristic
     pub score: f64,
 }
 
@@ -80,6 +85,7 @@ impl Simulation<'_> {
                 println!("-1: {:?}", timer.elapsed());
             }
 
+            // Increment the number of expansion steps
             num_expansion_steps += 1;
 
             // Iterate over the sets of trackers
@@ -113,7 +119,12 @@ impl Simulation<'_> {
                         )
                         .solve_cycle();
                         let new_tracker =
-                            ExpansionTracker::new(results, self.expansion_bound, h_mutated);
+                            ExpansionTracker::new(results, self.expansion_bound, h_mutated.clone());
+
+                        // Insert performance of this heuristic in the results hashmap
+                        self.results.insert(h_mutated, new_tracker.get_expansion_average());
+
+                        // Insert the new tracker into the trackers hashmap
                         self.trackers.insert(heuristic_id, new_tracker);
 
                         if self.verbose {
