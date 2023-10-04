@@ -14,11 +14,14 @@ use heuristic::Heuristic;
 use map::parser::parse_map_file;
 use map::util::Maps;
 
-use crate::alife::search::cycle::CycleSolver;
+use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
+use crate::alife::sim::genetic_algorithm::GeneticAlgorithm;
 use crate::constants::PROBLEM_CYCLE_LENGTH;
+use crate::heuristic::executors::interpreter::Interpreter;
+use crate::heuristic::executors::HeuristicExecuter;
 
 fn main() {
-    let choice = 6;
+    let choice = 7;
 
     match choice {
         0 => heuristic_demo(),
@@ -27,6 +30,7 @@ fn main() {
         3 => benchmark(),
         5 => benchmark_executers(),
         6 => alife_demo(),
+        7 => ga_demo(),
         _ => {
             unreachable!("Invalid choice in function `main`. Please choose from 0-4");
         }
@@ -46,9 +50,9 @@ fn heuristic_demo() {
 
     let mut h = parse_heuristic("(+ deltaX deltaY)");
     for _ in 0..100 {
-        h = mutate_heuristic(&h);
-        println!("{}", h);
-        println!("{:?}", heuristic_size(&h));
+        h.root = mutate_heuristic(&h.root);
+        println!("{}", h.root);
+        println!("{:?}", heuristic_size(&h.root));
     }
 }
 
@@ -72,7 +76,8 @@ fn search_demo() {
     println!("Goal: {:?}", map.ind2sub(goal));
 
     let problem = Problem::new(start, goal);
-    let result = problem.solve(&map, &h);
+    let executer = Interpreter::create(&h);
+    let result = problem.solve(&map, |x1, y1, x2, y2| executer.execute(x1, y1, x2, y2));
 
     assert!(result.solved);
     problem.print_path_on_map(&map, result.solution_path);
@@ -102,7 +107,7 @@ fn benchmark() {
 fn benchmark_executers() {
     let h =
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
-    let heuristic = Heuristic { root: h };
+    let heuristic = h;
 
     let mut x = 0.0;
     for _ in 0..10000 {
@@ -119,6 +124,29 @@ fn alife_demo() {
     let map = parse_map_file(Maps::Den312d.value());
 
     alife::alife(&map, Duration::from_secs(60));
+}
+
+fn ga_demo() {
+    let map = parse_map_file(Maps::Den312d.value());
+    let seed = Some(42);
+
+    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let manhattan = parse_heuristic("(+ deltaX deltaY)");
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    baseline.solve_cycle();
+    let expansion_limit = baseline.get_total_expansions_in_cycle() * 5;
+
+    let mut sim = GeneticAlgorithm::new(
+        &map,
+        cycle,
+        &baseline,
+        expansion_limit,
+        Duration::from_secs(60),
+        seed,
+        true,
+    );
+
+    let result = sim.run();
 }
 
 /* Code for manually creating problems, rather than a single cycle */

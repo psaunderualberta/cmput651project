@@ -7,6 +7,7 @@ use pyo3::prelude::*;
 
 use parser::HeuristicNode;
 
+#[derive(Debug, Clone, Eq, PartialEq)]
 #[pyclass]
 pub struct Heuristic {
     pub root: HeuristicNode,

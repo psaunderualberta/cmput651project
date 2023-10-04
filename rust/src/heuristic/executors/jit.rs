@@ -124,6 +124,10 @@ impl<'a> Jit<'a> {
     pub fn execute(&self, x1: f32, y1: f32, x2: f32, y2: f32) -> f32 {
         unsafe { self.function.call(x1, y1, x2, y2) }
     }
+
+    pub fn get_raw(&self) -> HeuristicFunc {
+        unsafe { self.function.as_raw() }
+    }
 }
 
 struct RecursiveBuilder<'a> {

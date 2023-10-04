@@ -17,6 +17,9 @@ use heuristic::Heuristic;
 use map::parser::parse_map_file;
 use map::util::Maps;
 
+use crate::heuristic::executors::interpreter::Interpreter;
+use crate::heuristic::executors::HeuristicExecuter;
+
 #[pymodule]
 fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
@@ -57,7 +60,8 @@ fn test_heuristic(h: &Heuristic) -> PyResult<()> {
     println!("Goal: {:?}", map.ind2sub(goal));
 
     let problem = Problem::new(start, goal);
-    let result = problem.solve(&map, &h.root);
+    let executer = Interpreter::create(h);
+    let result = problem.solve(&map, |x1, y1, x2, y2| executer.execute(x1, y1, x2, y2));
 
     assert!(result.solved);
     problem.print_path_on_map(&map, result.solution_path);
@@ -67,7 +71,5 @@ fn test_heuristic(h: &Heuristic) -> PyResult<()> {
 
 #[pyfunction]
 fn manhattan_distance() -> PyResult<Heuristic> {
-    Ok(Heuristic {
-        root: parse_heuristic("(+ deltaX deltaY)"),
-    })
+    Ok(parse_heuristic("(+ deltaX deltaY)"))
 }

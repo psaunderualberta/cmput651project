@@ -4,6 +4,8 @@ use pest_derive::Parser;
 use std::fmt::Display;
 use std::hash::Hash;
 
+use super::Heuristic;
+
 #[derive(Parser)]
 #[grammar = "heuristic/grammar/heuristic.pest"]
 struct HeuristicParser;
@@ -34,9 +36,11 @@ impl Hash for HeuristicNode {
     }
 }
 
-pub fn parse_heuristic(input: &str) -> HeuristicNode {
+pub fn parse_heuristic(input: &str) -> Heuristic {
     let result = HeuristicParser::parse(Rule::heuristic, input).unwrap_or_else(|e| panic!("{}", e));
-    pairs2struct(result)
+    Heuristic {
+        root: pairs2struct(result),
+    }
 }
 
 fn pairs2struct(result: Pairs<Rule>) -> HeuristicNode {
@@ -67,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_parse_success_1() {
-        let h1 = parse_heuristic("(+ deltaX deltaY)");
+        let h1 = parse_heuristic("(+ deltaX deltaY)").root;
         assert_eq!(
             h1,
             HeuristicNode::Binary(
@@ -80,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_parse_success_2() {
-        let h2 = parse_heuristic("(/ (max deltaX deltaY) (abs x1))");
+        let h2 = parse_heuristic("(/ (max deltaX deltaY) (abs x1))").root;
         assert_eq!(
             h2,
             HeuristicNode::Binary(
@@ -100,16 +104,13 @@ mod tests {
 
     #[test]
     fn test_parse_success_3() {
-        let h3 = parse_heuristic("x1");
-        assert_eq!(
-            h3,
-            HeuristicNode::Terminal(Rule::x1)
-        );
+        let h3 = parse_heuristic("x1").root;
+        assert_eq!(h3, HeuristicNode::Terminal(Rule::x1));
     }
-    
+
     #[test]
     fn test_parse_success_4() {
-        let h4 = parse_heuristic("(+ 1 3)");
+        let h4 = parse_heuristic("(+ 1 3)").root;
         assert_eq!(
             h4,
             HeuristicNode::Binary(

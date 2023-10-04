@@ -1,12 +1,13 @@
 pub mod search;
 pub mod sim;
 
-use std::time::Duration;
 use crate::alife::search::cycle::ProblemCycle;
 use crate::alife::sim::simulator::Simulation;
 use crate::constants::PROBLEM_CYCLE_LENGTH;
 use crate::heuristic::parser::parse_heuristic;
+use crate::heuristic::Heuristic;
 use crate::map::util::Map;
+use std::time::Duration;
 
 use self::search::cycle::CycleSolver;
 
@@ -26,7 +27,7 @@ pub fn alife(map: &Map, time_limit: Duration) {
         expansion_limit,
         time_limit,
         seed,
-        true
+        true,
     );
 
     let result = sim.run();

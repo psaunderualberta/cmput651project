@@ -6,6 +6,7 @@ use crate::constants::INITIAL_H_POPULATION_SIZE;
 use crate::heuristic::mutator::mutate_heuristic;
 use crate::heuristic::parser::HeuristicNode;
 use crate::heuristic::util::random_heuristic;
+use crate::heuristic::Heuristic;
 use crate::map::util::Map;
 
 use super::expansion_tracker::ExpansionTracker;
@@ -48,7 +49,6 @@ impl Simulation<'_> {
         seed: Option<u64>,
         verbose: bool,
     ) -> Simulation<'a> {
-
         // Seed the random number generator if a seed was provided
         if seed.is_some() {
             fastrand::seed(seed.unwrap());
@@ -73,7 +73,11 @@ impl Simulation<'_> {
         for i in 0..INITIAL_H_POPULATION_SIZE {
             println!("{}", i);
             let h = random_heuristic(-1);
-            let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h.clone());
+            let mut cycle = CycleSolver::from_cycle(
+                self.cycle.clone(),
+                self.map,
+                Heuristic { root: h.clone() },
+            );
             let results = cycle.solve_cycle();
             let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
             self.results
@@ -105,7 +109,7 @@ impl Simulation<'_> {
 
                 // Perform one mimicked expansion of a state
                 cur_tracker.expand();
-                
+
                 // If the tracker is expired, remove it from the set of trackers
                 if cur_tracker.expired() {
                     if self.verbose {
@@ -117,20 +121,21 @@ impl Simulation<'_> {
                 } else if cur_tracker.consume_mutation() {
                     // If we are able to perform a mutation, do it and add
                     // the new cycle + heuristic to the set of trackers
-                
+
                     let h = cur_tracker.get_heuristic();
                     let h_mutated = mutate_heuristic(&h);
                     let results = CycleSolver::from_cycle(
                         self.cycle.clone(),
                         self.map,
-                        h_mutated.clone(),
+                        Heuristic { root: h.clone() },
                     )
                     .solve_cycle();
                     let new_tracker =
                         ExpansionTracker::new(results, self.expansion_bound, h_mutated.clone());
 
                     // Insert performance of this heuristic in the results hashmap
-                    self.results.insert(h_mutated, new_tracker.get_expansion_average());
+                    self.results
+                        .insert(h_mutated, new_tracker.get_expansion_average());
 
                     // Insert the new tracker into the trackers hashmap
                     self.trackers.insert(heuristic_id, new_tracker);

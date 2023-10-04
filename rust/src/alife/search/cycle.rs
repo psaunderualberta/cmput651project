@@ -1,5 +1,8 @@
 use super::problem::{Problem, ProblemResult};
-use crate::{heuristic::parser::HeuristicNode, map::util::Map};
+use crate::{
+    heuristic::{executors::jit::Jit, parser::HeuristicNode, Heuristic},
+    map::util::Map,
+};
 use rayon::prelude::*;
 
 #[derive(Clone)]
@@ -42,42 +45,48 @@ impl ProblemCycle {
     }
 }
 
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct CycleSolver<'a> {
     map: &'a Map,
-    h: HeuristicNode,
+    heuristic: Heuristic,
     results: Vec<Option<ProblemResult>>,
     problems: ProblemCycle,
 }
 
 impl CycleSolver<'_> {
-    pub fn new<'a>(map: &'a Map, h: HeuristicNode, num_problems: usize) -> CycleSolver<'a> {
+    pub fn new<'a>(map: &'a Map, heuristic: Heuristic, num_problems: usize) -> CycleSolver<'a> {
         let pcycle = ProblemCycle::new(map, num_problems);
-        Self::from_cycle(pcycle, map, h)
+        Self::from_cycle(pcycle, map, heuristic)
     }
 
     pub fn from_cycle<'a>(
         problems: ProblemCycle,
         map: &'a Map,
-        h: HeuristicNode,
+        heuristic: Heuristic,
     ) -> CycleSolver<'a> {
         CycleSolver {
-            h,
             map,
+            heuristic,
             results: vec![None; problems.len()],
             problems,
         }
     }
 
     pub fn solve_cycle(&mut self) -> Vec<ProblemResult> {
+        let context = inkwell::context::Context::create();
+        let executor = Jit::create(&self.heuristic, &context);
+
         // Parallel problem solving :)
+        let raw = executor.get_raw().clone();
         self.results
             .par_iter_mut()
             .enumerate()
             .for_each(|(idx, result)| {
                 if result.is_none() {
                     let problem = self.problems.get(idx);
-                    *result = Some(problem.solve(self.map, &self.h));
+                    *result = Some(
+                        problem.solve(self.map, |sx, sy, gx, gy| unsafe { raw(sx, sy, gx, gy) }),
+                    );
                 }
             });
 

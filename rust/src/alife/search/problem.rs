@@ -1,6 +1,7 @@
 use std::collections::BinaryHeap;
 
 use super::state::State;
+use crate::heuristic::executors::jit::Jit;
 use crate::heuristic::parser::HeuristicNode;
 use crate::{
     constants::EDGE_COST,
@@ -30,12 +31,11 @@ impl Problem {
         Problem { start, goal }
     }
 
-    pub fn solve(&self, map: &Map, h: &HeuristicNode) -> ProblemResult {
+    pub fn solve(&self, map: &Map, executor: impl Fn(f32, f32, f32, f32) -> f32) -> ProblemResult {
         let (sx, sy) = map.ind2sub(self.start);
         let (gx, gy) = map.ind2sub(self.goal);
         let (sx, sy, gx, gy) = (sx as f32, sy as f32, gx as f32, gy as f32);
-        let executor = Interpreter::create(&Heuristic { root: h.clone() });
-        let start = State::new(self.start, 0.0, executor.execute(sx, sy, gx, gy));
+        let start = State::new(self.start, 0.0, executor(sx, sy, gx, gy));
 
         // Create priority queue
         let mut open = BinaryHeap::new();
@@ -85,7 +85,7 @@ impl Problem {
                 let (nx, ny) = map.ind2sub(neighbour);
 
                 let (gx, gy, nx, ny) = (gx as f32, gy as f32, nx as f32, ny as f32);
-                let new_h = executor.execute(nx, ny, gx, gy);
+                let new_h = executor(nx, ny, gx, gy);
 
                 let new_state = State::new(neighbour, new_g, new_h);
                 if g[neighbour].is_none() || new_g < g[neighbour].unwrap() {
