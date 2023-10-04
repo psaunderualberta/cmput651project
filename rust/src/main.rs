@@ -141,7 +141,7 @@ fn ga_demo() {
         cycle,
         &baseline,
         expansion_limit,
-        Duration::from_secs(60),
+        Duration::from_secs(24 * 60 * 60),
         seed,
         true,
     );
