@@ -10,7 +10,6 @@ use heuristic::executors::jit::Jit;
 use heuristic::mutator::mutate_heuristic;
 use heuristic::parser::parse_heuristic;
 use heuristic::util::{heuristic_size, random_heuristic};
-use heuristic::Heuristic;
 use map::parser::parse_map_file;
 use map::util::Maps;
 
@@ -21,7 +20,7 @@ use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
 
 fn main() {
-    let choice = 7;
+    let choice = 3;
 
     match choice {
         0 => heuristic_demo(),
@@ -85,7 +84,7 @@ fn search_demo() {
 
 fn benchmark() {
     use std::time::Instant;
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Orz103d.value());
     let h =
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 

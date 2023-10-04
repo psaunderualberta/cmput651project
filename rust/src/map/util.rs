@@ -4,6 +4,7 @@ use std::fmt::Display;
 pub enum Maps {
     Den009d,
     Den312d,
+    Orz103d
 }
 
 impl Maps {
@@ -11,6 +12,7 @@ impl Maps {
         match *self {
             Maps::Den009d => "./src/map/data/den009d.map",
             Maps::Den312d => "./src/map/data/den312d.map",
+            Maps::Orz103d => "./src/map/data/orz103d.map"
         }
     }
 }
