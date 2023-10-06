@@ -20,7 +20,7 @@ use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
 
 fn main() {
-    let choice = 3;
+    let choice = 1;
 
     match choice {
         0 => heuristic_demo(),

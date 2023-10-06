@@ -1,10 +1,10 @@
-use std::fmt::Display;
+use std::{fmt::Display, collections::HashSet};
 
 // Enumeration for possible maps on which to search.
 pub enum Maps {
     Den009d,
     Den312d,
-    Orz103d
+    Orz103d,
 }
 
 impl Maps {
@@ -12,7 +12,7 @@ impl Maps {
         match *self {
             Maps::Den009d => "./src/map/data/den009d.map",
             Maps::Den312d => "./src/map/data/den312d.map",
-            Maps::Orz103d => "./src/map/data/orz103d.map"
+            Maps::Orz103d => "./src/map/data/orz103d.map",
         }
     }
 }
@@ -38,7 +38,7 @@ pub struct Map {
 }
 
 impl Map {
-    pub fn from(n: usize, m: usize, map: Vec<Tile>) -> Map {
+    pub fn from(n: usize, m: usize, mut map: Vec<Tile>) -> Map {
         let mut neighbours: Vec<Vec<usize>> = Vec::new();
 
         for i in 0..map.len() {
@@ -70,6 +70,8 @@ impl Map {
                 neighbours[i].push(i + m as usize);
             }
         }
+
+        (map, neighbours) = trim_map_to_largest_connected_component(map, neighbours, n, m);
 
         Map {
             n,
@@ -106,9 +108,11 @@ impl Display for Map {
         // Write the map itself
         for i in 1..self.map.len() {
             result.push_str(match self.map[i] {
-                Tile::Passable => "_ ",
-                Tile::Unpassable => ". ",
+                Tile::Passable => "·",
+                Tile::Unpassable => "■",
             });
+
+            result.push_str(" ");
 
             if (i + 1) % self.m == 0 {
                 result.push('\n');
@@ -118,6 +122,56 @@ impl Display for Map {
         // Return the result
         write!(f, "{}", result)
     }
+}
+
+fn trim_map_to_largest_connected_component(
+    mut map: Vec<Tile>,
+    mut neighbours: Vec<Vec<usize>>,
+    n: usize,
+    m: usize,
+) -> (Vec<Tile>, Vec<Vec<usize>>) {
+    let mut visited: Vec<bool> = vec![false; map.len()];
+    let mut queue: Vec<usize> = Vec::new();
+    let mut largest_component: HashSet<usize> = HashSet::new();
+
+    for i in 0..map.len() {
+        if visited[i] || map[i] == Tile::Unpassable {
+            continue;
+        }
+
+        assert!(queue.is_empty());
+        queue.push(i);
+        visited[i] = true;
+
+        let mut component = HashSet::new();
+
+        // DFS to find connected component.
+        while !queue.is_empty() {
+            let current = queue.pop().unwrap();
+            component.insert(current);
+
+            for neighbour in &neighbours[current] {
+                if !visited[*neighbour] {
+                    queue.push(*neighbour);
+                    visited[*neighbour] = true;
+                }
+            }
+        }
+
+        if largest_component.len() < component.len() {
+            let tmp = largest_component;
+            largest_component = component;
+            component = tmp;
+        };
+
+        // 'component' is not the largest component, so remove its tiles from the map
+        for tile in component.iter() {
+            map[*tile] = Tile::Unpassable;
+            neighbours[*tile] = Vec::new();
+        }
+    }
+
+    (map, neighbours)
 }
 
 // TODO: Implement tests for map
