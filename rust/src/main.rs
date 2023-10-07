@@ -20,7 +20,7 @@ use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
 
 fn main() {
-    let choice = 1;
+    let choice = 6;
 
     match choice {
         0 => heuristic_demo(),
@@ -120,9 +120,9 @@ fn benchmark_executers() {
 }
 
 fn alife_demo() {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Orz103d.value());
 
-    alife::alife(&map, Duration::from_secs(60 * 10));
+    alife::alife(&map, Duration::from_secs(10));
 }
 
 fn ga_demo() {
@@ -145,7 +145,7 @@ fn ga_demo() {
         true,
     );
 
-    let result = sim.run();
+    let _result = sim.run();
 }
 
 /* Code for manually creating problems, rather than a single cycle */

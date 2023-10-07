@@ -28,7 +28,7 @@ impl ExpansionTracker {
     }
 
     pub fn expand(&mut self) {
-        if self.expansions.len() == self.current_tracked_expansions {
+        if self.expansions[self.problem_index] == self.current_tracked_expansions {
             self.problem_index = (self.problem_index + 1) % self.expansions.len();
             self.can_mutate = self.problem_index % MUTATION_INTERVAL == 0;
             self.current_tracked_expansions = 0;

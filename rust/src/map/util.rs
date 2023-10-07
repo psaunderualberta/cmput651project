@@ -1,4 +1,4 @@
-use std::{fmt::Display, collections::HashSet};
+use std::{collections::HashSet, fmt::Display};
 
 // Enumeration for possible maps on which to search.
 pub enum Maps {
@@ -126,7 +126,7 @@ impl Display for Map {
 
 fn trim_map_to_largest_connected_component(
     mut map: Vec<Tile>,
-    mut neighbours: Vec<Vec<usize>>
+    mut neighbours: Vec<Vec<usize>>,
 ) -> (Vec<Tile>, Vec<Vec<usize>>) {
     let mut visited: Vec<bool> = vec![false; map.len()];
     let mut queue: Vec<usize> = Vec::new();
