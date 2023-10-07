@@ -91,7 +91,7 @@ fn benchmark() {
     // Create problems
     let num_problems = PROBLEM_CYCLE_LENGTH;
     let mut astarcycle = CycleSolver::new(&map, h, num_problems);
-
+    
     // Perform first solve
     let now = Instant::now();
     astarcycle.solve_cycle();
@@ -120,7 +120,7 @@ fn benchmark_executers() {
 }
 
 fn alife_demo() {
-    let map = parse_map_file(Maps::Orz103d.value());
+    let map = parse_map_file(Maps::Den312d.value());
 
     alife::alife(&map, Duration::from_secs(10));
 }

@@ -12,7 +12,7 @@ use std::time::Duration;
 use self::search::cycle::CycleSolver;
 
 pub fn alife(map: &Map, time_limit: Duration) {
-    let seed = Some(42);
+    let seed = Some(69);
 
     let cycle = ProblemCycle::new(map, PROBLEM_CYCLE_LENGTH);
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
