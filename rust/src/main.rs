@@ -122,7 +122,7 @@ fn benchmark_executers() {
 fn alife_demo() {
     let map = parse_map_file(Maps::Den312d.value());
 
-    alife::alife(&map, Duration::from_secs(60));
+    alife::alife(&map, Duration::from_secs(60 * 10));
 }
 
 fn ga_demo() {

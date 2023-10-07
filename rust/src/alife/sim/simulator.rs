@@ -86,7 +86,7 @@ impl Simulation<'_> {
             heuristic_id += 1;
         }
 
-        let mut num_expansion_steps: usize = 0;
+        let mut num_expansion_steps: u64 = 0;
         let timer = Instant::now();
 
         // While we have not reached timeout and there are still heuristics to evaluate
