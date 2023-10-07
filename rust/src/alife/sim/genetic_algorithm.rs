@@ -1,18 +1,18 @@
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
-use std::collections::{HashMap, HashSet};
+
+
+use std::collections::{HashSet};
 use std::hash::Hash;
 use std::time::{Duration, Instant};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
-use crate::constants::INITIAL_H_POPULATION_SIZE;
-use crate::heuristic::mutator::mutate_heuristic;
-use crate::heuristic::parser::HeuristicNode;
+
+
+
 use crate::heuristic::util::random_heuristic;
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
 
-use super::expansion_tracker::ExpansionTracker;
+
 
 pub const MAX_BEST_INDIVIDUALS: usize = 10;
 
@@ -54,7 +54,7 @@ impl GeneticAlgorithm<'_> {
         expansion_bound: usize,
         time_limit: Duration,
         seed: Option<u64>,
-        verbose: bool,
+        _verbose: bool,
     ) -> GeneticAlgorithm<'a> {
         // Seed the random number generator if a seed was provided
         if seed.is_some() {
@@ -91,7 +91,7 @@ impl GeneticAlgorithm<'_> {
         let mut next_log = timer.elapsed() + Duration::from_secs(30);
         while timer.elapsed() < self.time_limit {
             let h = random_heuristic(-1);
-            let individual = self.add_individual(Heuristic { root: h });
+            let _individual = self.add_individual(Heuristic { root: h });
             if timer.elapsed() > next_log {
                 println!("\n### Best Heuristics ###\n");
                 for individual in self.best_individuals.iter() {

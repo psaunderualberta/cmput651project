@@ -71,7 +71,7 @@ impl Map {
             }
         }
 
-        (map, neighbours) = trim_map_to_largest_connected_component(map, neighbours, n, m);
+        (map, neighbours) = trim_map_to_largest_connected_component(map, neighbours);
 
         Map {
             n,
@@ -126,9 +126,7 @@ impl Display for Map {
 
 fn trim_map_to_largest_connected_component(
     mut map: Vec<Tile>,
-    mut neighbours: Vec<Vec<usize>>,
-    n: usize,
-    m: usize,
+    mut neighbours: Vec<Vec<usize>>
 ) -> (Vec<Tile>, Vec<Vec<usize>>) {
     let mut visited: Vec<bool> = vec![false; map.len()];
     let mut queue: Vec<usize> = Vec::new();

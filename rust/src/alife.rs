@@ -5,7 +5,7 @@ use crate::alife::search::cycle::ProblemCycle;
 use crate::alife::sim::simulator::Simulation;
 use crate::constants::PROBLEM_CYCLE_LENGTH;
 use crate::heuristic::parser::parse_heuristic;
-use crate::heuristic::Heuristic;
+
 use crate::map::util::Map;
 use std::time::Duration;
 

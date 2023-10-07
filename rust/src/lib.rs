@@ -5,10 +5,8 @@ pub mod map;
 
 use pyo3::prelude::*;
 use pyo3::{
-    exceptions::PyIndexError,
     pymodule,
-    types::{PyDict, PyModule},
-    FromPyObject, PyAny, PyObject, Python,
+    types::{PyModule}, Python,
 };
 
 use alife::search::problem::Problem;
