@@ -56,12 +56,12 @@ fn heuristic_demo() {
 }
 
 fn map_demo() {
-    let map = parse_map_file(Maps::Den009d.value());
+    let map = parse_map_file(Maps::Den009d.path());
     println!("{}", map);
 }
 
 fn search_demo() {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.path());
     let h = parse_heuristic("(sqr (max deltaY deltaX))");
 
     // Generate random start and goal positions
@@ -84,7 +84,7 @@ fn search_demo() {
 
 fn benchmark() {
     use std::time::Instant;
-    let map = parse_map_file(Maps::Orz103d.value());
+    let map = parse_map_file(Maps::Orz103d.path());
     let h =
         parse_heuristic("(* (+ (* (+ (+ (+ deltaX deltaY) deltaY) deltaX) deltaY) deltaX) deltaY)");
 
@@ -120,13 +120,13 @@ fn benchmark_executers() {
 }
 
 fn alife_demo() {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.path());
 
     alife::alife(&map, Duration::from_secs(10));
 }
 
 fn ga_demo() {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.path());
     let seed = Some(42);
 
     let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);

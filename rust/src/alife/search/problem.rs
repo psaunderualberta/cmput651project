@@ -1,7 +1,7 @@
 use std::collections::BinaryHeap;
 
 use super::state::State;
-
+use pyo3::prelude::*;
 
 use crate::{
     constants::EDGE_COST,
@@ -16,10 +16,15 @@ pub struct Problem {
 }
 
 #[derive(Clone)]
+#[pyclass]
 pub struct ProblemResult {
+    #[pyo3(get)]
     pub expansions: Vec<usize>,
+    #[pyo3(get)]
     pub num_traversals: usize,
+    #[pyo3(get)]
     pub solution_path: Vec<usize>,
+    #[pyo3(get)]
     pub solved: bool,
 }
 

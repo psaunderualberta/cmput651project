@@ -3,13 +3,16 @@ pub mod constants;
 pub mod heuristic;
 pub mod map;
 
+use alife::search::cycle::CycleSolver;
+use constants::PROBLEM_CYCLE_LENGTH;
 use pyo3::prelude::*;
 use pyo3::{
     pymodule,
-    types::{PyModule}, Python,
+    types::PyModule,
+    Python,
 };
 
-use alife::search::problem::Problem;
+use alife::search::problem::{Problem, ProblemResult};
 use heuristic::parser::parse_heuristic;
 use heuristic::Heuristic;
 use map::parser::parse_map_file;
@@ -21,8 +24,8 @@ use crate::heuristic::executors::HeuristicExecuter;
 #[pymodule]
 fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
-
     m.add_function(wrap_pyfunction!(test_heuristic, m)?)?;
+    m.add_function(wrap_pyfunction!(solve_cycle_on_map, m)?)?;
 
     let heuristic_module = PyModule::new(py, "heuristic")?;
     heuristic_module.add_function(wrap_pyfunction!(manhattan_distance, m)?)?;
@@ -45,7 +48,7 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
 
 #[pyfunction]
 fn test_heuristic(h: &Heuristic) -> PyResult<()> {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.path());
 
     // Generate random start and goal positions
     let start = map.random_free_position();
@@ -65,6 +68,14 @@ fn test_heuristic(h: &Heuristic) -> PyResult<()> {
     problem.print_path_on_map(&map, result.solution_path);
 
     Ok(())
+}
+
+#[pyfunction]
+fn solve_cycle_on_map(map_name: String, h: &Heuristic) -> PyResult<Vec<ProblemResult>> {
+    let map_path = Maps::name2path(map_name.as_str());
+    let map = parse_map_file(map_path);
+
+    Ok(CycleSolver::new(&map, h.clone(), PROBLEM_CYCLE_LENGTH).solve_cycle())
 }
 
 #[pyfunction]

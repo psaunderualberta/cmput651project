@@ -8,11 +8,20 @@ pub enum Maps {
 }
 
 impl Maps {
-    pub fn value(&self) -> &str {
+    pub fn path(&self) -> &str {
         match *self {
             Maps::Den009d => "./src/map/data/den009d.map",
             Maps::Den312d => "./src/map/data/den312d.map",
             Maps::Orz103d => "./src/map/data/orz103d.map",
+        }
+    }
+
+    pub fn name2path(name: &str) -> &str {
+        match name {
+            "den009d" => Maps::Den009d.path(),
+            "den312d" => Maps::Den312d.path(),
+            "orz103d" => Maps::Orz103d.path(),
+            n => { panic!("{n} is not a known map name!")}
         }
     }
 }

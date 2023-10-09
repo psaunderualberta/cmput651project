@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::process::exit;
 use std::time::{Duration, Instant};
 
 use priority_queue::PriorityQueue;
