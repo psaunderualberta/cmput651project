@@ -75,9 +75,12 @@ impl Simulation<'_> {
 
     pub fn run(&mut self) -> SimulationResult {
         let mut heuristic_id = 0;
+
+        // Create a default heuristic result, to be overwritten as soon as possible
         let mut best_heuristic = HeuristicResult {
-            heuristic: parse_heuristic("(+ deltaX deltaY)"),
-            score: f64::MIN,
+            heuristic: parse_heuristic("(+ deltaX deltaY)").root.to_string(),
+            creation: 0,
+            score: f64::MAX,
         };
 
         // Create the initial population of trackers
@@ -93,7 +96,7 @@ impl Simulation<'_> {
 
             // Get heuristic result, update best heuristic if necessary
             let heuristic_result = tracker.get_heuristic_result();
-            if best_heuristic.less_than(&heuristic_result) {
+            if best_heuristic.worse_than(&heuristic_result) {
                 best_heuristic = heuristic_result.clone();
             }
 
@@ -106,12 +109,10 @@ impl Simulation<'_> {
         let mut num_expansion_steps: u64 = 0;
         let timer = Instant::now();
 
-        // Pop the item with the minimum # of expansions in the current problem
-
         // While we have not reached timeout and there are still heuristics to evaluate
         while self.trackers.len() != 0 && timer.elapsed() < self.time_limit {
             if self.verbose && num_expansion_steps % 100000 == 0 {
-                println!("-1: {:?}", timer.elapsed());
+                println!("Elapsed time: {:?}", timer.elapsed());
             }
 
             // Increment the number of expansion steps
@@ -156,12 +157,16 @@ impl Simulation<'_> {
 
                 // Get heuristic result, update best if necessary
                 let heuristic_result = tracker.get_heuristic_result();
-                if best_heuristic.less_than(&heuristic_result) {
+                if best_heuristic.worse_than(&heuristic_result) {
                     best_heuristic = heuristic_result.clone();
+
+                    if self.verbose {
+                        println!("New best heuristic: {}\n-> {:.4}", best_heuristic.heuristic, best_heuristic.score);
+                    }
                 }
 
                 // Insert performance of this heuristic in the results hashmap
-                self.results.push(new_tracker.get_heuristic_result());
+                self.results.push(heuristic_result);
 
                 // Insert the new tracker into the trackers hashmap
                 self.trackers.push(heuristic_id, new_tracker);

@@ -37,7 +37,8 @@ impl ExpansionTracker {
 
     pub fn get_heuristic_result(&self) -> HeuristicResult {
         HeuristicResult {
-            heuristic: self.heuristic.clone(),
+            heuristic: self.heuristic.root.to_string(),
+            creation: self.heuristic.creation.as_millis(),
             score: self.get_heuristic_score(),
         }
     }
