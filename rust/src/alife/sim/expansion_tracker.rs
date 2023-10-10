@@ -1,9 +1,10 @@
 use std::cmp::Ordering;
 
 use crate::{
-    alife::search::problem::ProblemResult, constants::MUTATION_INTERVAL,
-    heuristic::parser::HeuristicNode,
+    alife::search::problem::ProblemResult, constants::MUTATION_INTERVAL, heuristic::Heuristic,
 };
+
+use super::heuristic_result::HeuristicResult;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct ExpansionTracker {
@@ -12,12 +13,16 @@ pub struct ExpansionTracker {
     pub current_problem_expansions: usize,
     pub expansions: Vec<usize>,
     pub problem_index: usize,
-    pub heuristic: HeuristicNode,
+    pub heuristic: Heuristic,
     pub can_mutate: bool,
 }
 
 impl ExpansionTracker {
-    pub fn new(results: Vec<ProblemResult>, bound: usize, heuristic: HeuristicNode) -> ExpansionTracker {
+    pub fn new(
+        results: Vec<ProblemResult>,
+        bound: usize,
+        heuristic: Heuristic,
+    ) -> ExpansionTracker {
         let expansions: Vec<usize> = results.iter().map(|r| r.expansions.len()).collect();
         ExpansionTracker {
             total_expansions: 0,
@@ -27,6 +32,13 @@ impl ExpansionTracker {
             problem_index: 0,
             heuristic,
             can_mutate: false,
+        }
+    }
+
+    pub fn get_heuristic_result(&self) -> HeuristicResult {
+        HeuristicResult {
+            heuristic: self.heuristic.clone(),
+            score: self.get_heuristic_score(),
         }
     }
 
@@ -53,7 +65,7 @@ impl ExpansionTracker {
         self.current_problem_expansions = self.expansions[self.problem_index];
     }
 
-    pub fn get_heuristic(&self) -> HeuristicNode {
+    pub fn get_heuristic(&self) -> Heuristic {
         self.heuristic.clone()
     }
 

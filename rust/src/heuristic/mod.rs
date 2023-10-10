@@ -12,7 +12,9 @@ use parser::HeuristicNode;
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[pyclass]
 pub struct Heuristic {
+    #[pyo3(get)]
     pub root: HeuristicNode,
+    #[pyo3(get)]
     pub creation: Instant
 }
 

@@ -3,10 +3,11 @@ use std::time::{Duration, Instant};
 use priority_queue::PriorityQueue;
 use pyo3::prelude::*;
 
-use crate::alife::sim::heuristic_result::HeuristicResult;
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
+use crate::alife::sim::heuristic_result::HeuristicResult;
 use crate::constants::INITIAL_H_POPULATION_SIZE;
 use crate::heuristic::mutator::mutate_heuristic;
+use crate::heuristic::parser::parse_heuristic;
 use crate::heuristic::util::random_heuristic;
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
@@ -74,22 +75,29 @@ impl Simulation<'_> {
 
     pub fn run(&mut self) -> SimulationResult {
         let mut heuristic_id = 0;
+        let mut best_heuristic = HeuristicResult {
+            heuristic: parse_heuristic("(+ deltaX deltaY)"),
+            score: f64::MIN,
+        };
 
         // Create the initial population of trackers
         for i in 0..INITIAL_H_POPULATION_SIZE {
-            println!("{}", i);
-            let h = random_heuristic(-1);
-            let mut cycle = CycleSolver::from_cycle(
-                self.cycle.clone(),
-                self.map,
-                Heuristic::new(h.clone()),
-            );
+            if self.verbose {
+                println!("Seeding heuristic #{}", i);
+            }
+            let h = Heuristic::new(random_heuristic(-1));
+            let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h.clone());
 
             let results = cycle.solve_cycle();
             let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
-            let score = tracker.get_heuristic_score();
 
-            self.results.push(tracker.get_heuristic_result());
+            // Get heuristic result, update best heuristic if necessary
+            let heuristic_result = tracker.get_heuristic_result();
+            if best_heuristic.less_than(&heuristic_result) {
+                best_heuristic = heuristic_result.clone();
+            }
+
+            self.results.push(heuristic_result);
             self.trackers.push(heuristic_id, tracker);
 
             heuristic_id += 1;
@@ -138,28 +146,28 @@ impl Simulation<'_> {
 
             // Mutate the heuristics to be mutated
             for h in new_heuristics.into_iter() {
-                let new_h = mutate_heuristic(&h);
-                let results = CycleSolver::from_cycle(
-                    self.cycle.clone(),
-                    self.map,
-                    Heuristic::new(new_h.clone()),
-                )
-                .solve_cycle();
+                let new_h = mutate_heuristic(&h.root);
+                let heuristic = Heuristic::new(new_h);
+                let results =
+                    CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone())
+                        .solve_cycle();
                 let new_tracker =
-                    ExpansionTracker::new(results, self.expansion_bound, new_h.clone());
+                    ExpansionTracker::new(results, self.expansion_bound, heuristic.clone());
+
+                // Get heuristic result, update best if necessary
+                let heuristic_result = tracker.get_heuristic_result();
+                if best_heuristic.less_than(&heuristic_result) {
+                    best_heuristic = heuristic_result.clone();
+                }
 
                 // Insert performance of this heuristic in the results hashmap
-                self.results.insert(new_h, new_tracker.get_heuristic_score());
+                self.results.push(new_tracker.get_heuristic_result());
 
                 // Insert the new tracker into the trackers hashmap
                 self.trackers.push(heuristic_id, new_tracker);
 
                 // Increment the heuristic identifier
                 heuristic_id += 1;
-
-                if self.verbose {
-                    println!("{key}: M -> {heuristic_id}");
-                }
             }
 
             if !tracker.expired() {
@@ -169,73 +177,61 @@ impl Simulation<'_> {
 
         println!("Num expansion steps: {}", num_expansion_steps);
 
-        // Get the best heuristic for quick reference when returned.
-        let mut best_heuristic = random_heuristic(1);
-        let mut best_exp_per_cycle = f64::MAX;
-        for (heuristic, exp_per_cycle) in self.results.iter() {
-            if exp_per_cycle.min(best_exp_per_cycle) == *exp_per_cycle {
-                best_exp_per_cycle = *exp_per_cycle;
-                best_heuristic = heuristic.clone();
-            }
-        }
-
         // Return the results of the simulation
         SimulationResult {
             heuristics: self.results.clone(),
-            creations: self.creations.clone(),
-            best: best_heuristic,
-            score: best_exp_per_cycle,
+            best: best_heuristic.clone(),
         }
     }
 }
 
-            // // Iterate over the sets of trackers
-            // let keys: Vec<i32> = self.trackers.keys().map(|x| *x).collect();
-            // for key in keys {
-            //     // Get the current solver
-            //     let cur_tracker = self.trackers.get_mut(&key).unwrap();
+// // Iterate over the sets of trackers
+// let keys: Vec<i32> = self.trackers.keys().map(|x| *x).collect();
+// for key in keys {
+//     // Get the current solver
+//     let cur_tracker = self.trackers.get_mut(&key).unwrap();
 
-            //     // Ensure not expired
-            //     assert!(!cur_tracker.expired());
+//     // Ensure not expired
+//     assert!(!cur_tracker.expired());
 
-            //     // Perform one mimicked expansion of a state
-            //     cur_tracker.expand();
+//     // Perform one mimicked expansion of a state
+//     cur_tracker.expand();
 
-            //     // If the tracker is expired, remove it from the set of trackers
-            //     if cur_tracker.expired() {
-            //         if self.verbose {
-            //             println!("{key}: K");
-            //         }
+//     // If the tracker is expired, remove it from the set of trackers
+//     if cur_tracker.expired() {
+//         if self.verbose {
+//             println!("{key}: K");
+//         }
 
-            //         // This cycle has no more expansions left. Kill it >:)
-            //         self.trackers.remove(&key);
-            //     } else if cur_tracker.consume_mutation() {
-            //         // If we are able to perform a mutation, do it and add
-            //         // the new cycle + heuristic to the set of trackers
+//         // This cycle has no more expansions left. Kill it >:)
+//         self.trackers.remove(&key);
+//     } else if cur_tracker.consume_mutation() {
+//         // If we are able to perform a mutation, do it and add
+//         // the new cycle + heuristic to the set of trackers
 
-            //         let h = cur_tracker.get_heuristic();
-            //         let h_mutated = mutate_heuristic(&h);
-            //         let results = CycleSolver::from_cycle(
-            //             self.cycle.clone(),
-            //             self.map,
-            //             Heuristic { root: h.clone() },
-            //         )
-            //         .solve_cycle();
-            //         let new_tracker =
-            //             ExpansionTracker::new(results, self.expansion_bound, h_mutated.clone());
+//         let h = cur_tracker.get_heuristic();
+//         let h_mutated = mutate_heuristic(&h);
+//         let results = CycleSolver::from_cycle(
+//             self.cycle.clone(),
+//             self.map,
+//             Heuristic { root: h.clone() },
+//         )
+//         .solve_cycle();
+//         let new_tracker =
+//             ExpansionTracker::new(results, self.expansion_bound, h_mutated.clone());
 
-            //         // Insert performance of this heuristic in the results hashmap
-            //         self.results
-            //             .insert(h_mutated, new_tracker.get_expansion_average());
+//         // Insert performance of this heuristic in the results hashmap
+//         self.results
+//             .insert(h_mutated, new_tracker.get_expansion_average());
 
-            //         // Insert the new tracker into the trackers hashmap
-            //         self.trackers.insert(heuristic_id, new_tracker);
+//         // Insert the new tracker into the trackers hashmap
+//         self.trackers.insert(heuristic_id, new_tracker);
 
-            //         // Increment the heuristic identifier
-            //         heuristic_id += 1;
+//         // Increment the heuristic identifier
+//         heuristic_id += 1;
 
-            //         if self.verbose {
-            //             println!("{key}: M -> {heuristic_id}");
-            //         }
-            //     }
-            // }
+//         if self.verbose {
+//             println!("{key}: M -> {heuristic_id}");
+//         }
+//     }
+// }

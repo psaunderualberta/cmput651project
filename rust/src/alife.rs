@@ -31,5 +31,5 @@ pub fn alife(map: &Map, time_limit: Duration) {
     );
 
     let result = sim.run();
-    println!("Best: {}\n-> {:.3}", result.best, result.score);
+    println!("Best: {:?}", result.best);
 }
