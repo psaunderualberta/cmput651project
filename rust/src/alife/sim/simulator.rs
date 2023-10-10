@@ -1,12 +1,12 @@
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use priority_queue::PriorityQueue;
+use pyo3::prelude::*;
 
+use crate::alife::sim::heuristic_result::HeuristicResult;
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
 use crate::constants::INITIAL_H_POPULATION_SIZE;
 use crate::heuristic::mutator::mutate_heuristic;
-use crate::heuristic::parser::HeuristicNode;
 use crate::heuristic::util::random_heuristic;
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
@@ -27,18 +27,19 @@ pub struct Simulation<'a> {
     // The set of trackers for each heuristic
     pub trackers: PriorityQueue<i32, ExpansionTracker>,
     // The results of each heuristic (avg. expansions in single cycle)
-    pub results: HashMap<HeuristicNode, f64>,
+    pub results: Vec<HeuristicResult>,
     // Whether or not to print verbose output
     verbose: bool,
 }
 
+#[pyclass]
 pub struct SimulationResult {
-    // Mapping from each heuristic to the average # of expansions per cycle
-    pub heuristics: HashMap<HeuristicNode, f64>,
+    // Mapping from each heuristic to its score for the cycle
+    #[pyo3(get)]
+    pub heuristics: Vec<HeuristicResult>,
     // The best heuristic found in terms of expansions per cycle
-    pub best: HeuristicNode,
-    // The score of the best heuristic
-    pub score: f64,
+    #[pyo3(get)]
+    pub best: HeuristicResult,
 }
 
 impl Simulation<'_> {
@@ -59,7 +60,7 @@ impl Simulation<'_> {
             baseline,
             expansion_bound,
             time_limit,
-            results: HashMap::new(),
+            results: Vec::new(),
             trackers: PriorityQueue::new(),
             verbose,
         };
@@ -81,13 +82,14 @@ impl Simulation<'_> {
             let mut cycle = CycleSolver::from_cycle(
                 self.cycle.clone(),
                 self.map,
-                Heuristic { root: h.clone() },
+                Heuristic::new(h.clone()),
             );
 
             let results = cycle.solve_cycle();
             let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
+            let score = tracker.get_heuristic_score();
 
-            self.results.insert(h.clone(), tracker.get_expansion_average());
+            self.results.push(tracker.get_heuristic_result());
             self.trackers.push(heuristic_id, tracker);
 
             heuristic_id += 1;
@@ -140,14 +142,14 @@ impl Simulation<'_> {
                 let results = CycleSolver::from_cycle(
                     self.cycle.clone(),
                     self.map,
-                    Heuristic { root: new_h.clone() },
+                    Heuristic::new(new_h.clone()),
                 )
                 .solve_cycle();
                 let new_tracker =
                     ExpansionTracker::new(results, self.expansion_bound, new_h.clone());
 
                 // Insert performance of this heuristic in the results hashmap
-                self.results.insert(new_h, new_tracker.get_expansion_average());
+                self.results.insert(new_h, new_tracker.get_heuristic_score());
 
                 // Insert the new tracker into the trackers hashmap
                 self.trackers.push(heuristic_id, new_tracker);
@@ -180,6 +182,7 @@ impl Simulation<'_> {
         // Return the results of the simulation
         SimulationResult {
             heuristics: self.results.clone(),
+            creations: self.creations.clone(),
             best: best_heuristic,
             score: best_exp_per_cycle,
         }

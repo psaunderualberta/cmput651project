@@ -77,7 +77,7 @@ impl GeneticAlgorithm<'_> {
     pub fn run(&mut self) {
         for i in 0..self.max_population_size {
             let h = random_heuristic(-1);
-            let individual = self.add_individual(Heuristic { root: h });
+            let individual = self.add_individual(Heuristic::new(h));
             println!(
                 "Generating initial heuristic #{}/{} with {:2.2}% expansions of baseline",
                 i,
@@ -91,7 +91,7 @@ impl GeneticAlgorithm<'_> {
         let mut next_log = timer.elapsed() + Duration::from_secs(30);
         while timer.elapsed() < self.time_limit {
             let h = random_heuristic(-1);
-            let _individual = self.add_individual(Heuristic { root: h });
+            let _individual = self.add_individual(Heuristic::new(h));
             if timer.elapsed() > next_log {
                 println!("\n### Best Heuristics ###\n");
                 for individual in self.best_individuals.iter() {

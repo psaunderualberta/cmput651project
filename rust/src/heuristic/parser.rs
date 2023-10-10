@@ -38,9 +38,7 @@ impl Hash for HeuristicNode {
 
 pub fn parse_heuristic(input: &str) -> Heuristic {
     let result = HeuristicParser::parse(Rule::heuristic, input).unwrap_or_else(|e| panic!("{}", e));
-    Heuristic {
-        root: pairs2struct(result),
-    }
+    Heuristic::new(pairs2struct(result))
 }
 
 fn pairs2struct(result: Pairs<Rule>) -> HeuristicNode {

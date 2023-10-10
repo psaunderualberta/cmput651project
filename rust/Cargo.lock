@@ -68,7 +68,6 @@ dependencies = [
  "fastrand",
  "inkwell",
  "ndarray",
- "num-complex",
  "numpy",
  "pest",
  "pest_derive",

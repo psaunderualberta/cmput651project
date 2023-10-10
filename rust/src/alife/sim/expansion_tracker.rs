@@ -30,7 +30,7 @@ impl ExpansionTracker {
         }
     }
 
-    pub fn get_expansion_average(&self) -> f64 {
+    pub fn get_heuristic_score(&self) -> f64 {
         self.expansions.iter().sum::<usize>() as f64 / self.expansions.len() as f64
     }
 

@@ -15,4 +15,3 @@ results = libcmput651py.solve_cycle_on_map("den312d", manhattan_distance_heurist
 num_expansions = list(map(lambda x: len(x.expansions), results))
 traversals = list(map(lambda x: x.num_traversals, results))
 
-print(np.corrcoef(num_expansions, traversals))

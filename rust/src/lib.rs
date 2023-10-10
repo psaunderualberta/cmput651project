@@ -3,14 +3,13 @@ pub mod constants;
 pub mod heuristic;
 pub mod map;
 
-use alife::search::cycle::CycleSolver;
+use std::time::Duration;
+
+use alife::search::cycle::{CycleSolver, ProblemCycle};
+use alife::sim::simulator::{Simulation, SimulationResult};
 use constants::PROBLEM_CYCLE_LENGTH;
 use pyo3::prelude::*;
-use pyo3::{
-    pymodule,
-    types::PyModule,
-    Python,
-};
+use pyo3::{pymodule, types::PyModule, Python};
 
 use alife::search::problem::{Problem, ProblemResult};
 use heuristic::parser::parse_heuristic;
@@ -30,6 +29,11 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     let heuristic_module = PyModule::new(py, "heuristic")?;
     heuristic_module.add_function(wrap_pyfunction!(manhattan_distance, m)?)?;
     m.add_submodule(heuristic_module)?;
+
+    // Alife module
+    let alife_module = PyModule::new(py, "alife")?;
+    alife_module.add_function(wrap_pyfunction!(simulation, m)?)?;
+    m.add_submodule(alife_module)?;
 
     Ok(())
 }
@@ -76,6 +80,31 @@ fn solve_cycle_on_map(map_name: String, h: &Heuristic) -> PyResult<Vec<ProblemRe
     let map = parse_map_file(map_path);
 
     Ok(CycleSolver::new(&map, h.clone(), PROBLEM_CYCLE_LENGTH).solve_cycle())
+}
+
+#[pyfunction]
+fn simulation(map_name: String, seed: u64, secs: u64) -> PyResult<SimulationResult> {
+    let map_path = Maps::name2path(map_name.as_str());
+    let map = parse_map_file(map_path);
+
+    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let manhattan = parse_heuristic("(+ deltaX deltaY)");
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    baseline.solve_cycle();
+    let expansion_limit = baseline.get_total_expansions_in_cycle() * 5;
+    let time_limit = Duration::from_secs(secs);
+
+    let mut sim = Simulation::new(
+        &map,
+        cycle,
+        &baseline,
+        expansion_limit,
+        time_limit,
+        Some(seed),
+        true,
+    );
+
+    Ok(sim.run())
 }
 
 #[pyfunction]
