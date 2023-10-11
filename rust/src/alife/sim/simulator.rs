@@ -123,40 +123,24 @@ impl Simulation<'_> {
             let executed_expansions = tracker.get_current_num_expansions();
             tracker.next_problem();
 
-            // Create a vector of heuristics to mutate
-            let mut new_heuristics = Vec::new();
-            if tracker.consume_mutation() {
-                new_heuristics.push(tracker.get_heuristic());
-            }
-
-            // Iterate over the entire priority queue, subtracting the previous expansions
+            // Iterate over the entire priority queue, subtracting the expansion
+            // used to solve the current problem
             for (_, other_tracker) in self.trackers.iter_mut() {
                 other_tracker.reduce_num_expansions(executed_expansions);
-
-                // Edge case where multiple trackers had minimal problem length
-                if other_tracker.get_current_num_expansions() == 0 {
-                    other_tracker.next_problem();
-                }
-
-                // Add a heuristic to the set of heuristics to be mutated
-                if other_tracker.consume_mutation() {
-                    let new_h = other_tracker.get_heuristic();
-                    new_heuristics.push(new_h);
-                }
             }
 
             // Mutate the heuristics to be mutated
-            for h in new_heuristics.into_iter() {
-                let new_h = mutate_heuristic(&h.root);
+            if tracker.consume_mutation() {
+                let new_h = mutate_heuristic(&tracker.get_heuristic().root);
                 let heuristic = Heuristic::new(new_h);
                 let results =
                     CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone())
                         .solve_cycle();
                 let new_tracker =
-                    ExpansionTracker::new(results, self.expansion_bound, heuristic.clone());
+                    ExpansionTracker::new(results, self.expansion_bound, heuristic);
 
                 // Get heuristic result, update best if necessary
-                let heuristic_result = tracker.get_heuristic_result();
+                let heuristic_result = new_tracker.get_heuristic_result();
                 if best_heuristic.worse_than(&heuristic_result) {
                     best_heuristic = heuristic_result.clone();
 
@@ -165,7 +149,7 @@ impl Simulation<'_> {
                     }
                 }
 
-                // Insert performance of this heuristic in the results hashmap
+                // Insert performance of this heuristic in the results vector
                 self.results.push(heuristic_result);
 
                 // Insert the new tracker into the trackers hashmap
