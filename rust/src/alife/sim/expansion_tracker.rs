@@ -12,6 +12,8 @@ pub struct ExpansionTracker {
     pub bound: usize,
     pub current_problem_expansions: usize,
     pub expansions: Vec<usize>,
+    pub traversals: Vec<usize>,
+    pub solution_path_lens: Vec<usize>,
     pub problem_index: usize,
     pub heuristic: Heuristic,
     pub can_mutate: bool,
@@ -23,11 +25,18 @@ impl ExpansionTracker {
         bound: usize,
         heuristic: Heuristic,
     ) -> ExpansionTracker {
-        let expansions: Vec<usize> = results.iter().map(|r| r.expansions.len()).collect();
+        let expansions: Vec<usize>= results.iter().map(|r| r.expansions.len()).collect();
+        let traversals: Vec<usize> = results.iter().map(|r| r.num_traversals).collect();
+        let solution_path_lens: Vec<usize> = results
+            .iter()
+            .map(|r| r.solution_path.len())
+            .collect();
         ExpansionTracker {
             total_expansions: 0,
             current_problem_expansions: expansions[0],
             expansions,
+            traversals,
+            solution_path_lens,
             bound,
             problem_index: 0,
             heuristic,
@@ -36,8 +45,28 @@ impl ExpansionTracker {
     }
 
     pub fn get_heuristic_result(&self) -> HeuristicResult {
+        // Join the expansions and traverasls into strings
+        let expansions = self.expansions
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+        let traversals = self.traversals
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+        let solution_path_lens = self.solution_path_lens
+            .iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<String>>()
+            .join(",");
+
         HeuristicResult {
             heuristic: self.heuristic.root.to_string(),
+            expansions,
+            traversals,
+            solution_path_lens,
             creation: self.heuristic.creation.as_millis(),
             score: self.get_heuristic_score(),
         }

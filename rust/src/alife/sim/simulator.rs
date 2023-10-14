@@ -80,6 +80,9 @@ impl Simulation<'_> {
         let mut best_heuristic = HeuristicResult {
             heuristic: parse_heuristic("(+ deltaX deltaY)").root.to_string(),
             creation: 0,
+            expansions: String::new(),
+            traversals: String::new(),
+            solution_path_lens: String::new(),
             score: f64::MAX,
         };
 

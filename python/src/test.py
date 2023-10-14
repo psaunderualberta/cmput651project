@@ -27,7 +27,7 @@ traversals = list(map(lambda x: x.num_traversals, results))
 
 results = []
 seconds_per_hour = 60 * 60
-for seed in range(8):
+for seed in range(60, 68):
     sim_result = libcmput651py.alife.simulation("den312d", seed, seconds_per_hour)
     python_sim_result = {
         "best": heuristic2dict(sim_result.best),
