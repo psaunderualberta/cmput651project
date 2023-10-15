@@ -42,6 +42,9 @@ RUN apt-get update && apt-get upgrade -q -y && \
     python3-pip \
     python3-dev \
     python3-venv \
+    python3-numpy \
+    python3-pandas \
+    python3-matplotlib \
     libpython3-dev \
     && rm -rf /var/lib/apt/lists/* && apt-get clean
 
@@ -53,8 +56,8 @@ ENV PYTHONIOENCODING=utf-8
 
 ENV PYTHONPATH="/workspaces/cmput651project/rust/target/release:/workspaces/cmput651project/rust/target/debug"
 
+# Setup Rust
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-
 RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
 
 # setup better up/down arrow history search

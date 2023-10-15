@@ -1,13 +1,10 @@
 use std::collections::BinaryHeap;
 
 use super::state::State;
-use crate::heuristic::executors::jit::Jit;
-use crate::heuristic::parser::HeuristicNode;
+use pyo3::prelude::*;
+
 use crate::{
     constants::EDGE_COST,
-    heuristic::executors::interpreter::Interpreter,
-    heuristic::executors::HeuristicExecuter,
-    heuristic::Heuristic,
     map::util::{Map, Tile},
 };
 use colored::*;
@@ -19,10 +16,15 @@ pub struct Problem {
 }
 
 #[derive(Clone)]
+#[pyclass]
 pub struct ProblemResult {
+    #[pyo3(get)]
     pub expansions: Vec<usize>,
+    #[pyo3(get)]
     pub num_traversals: usize,
+    #[pyo3(get)]
     pub solution_path: Vec<usize>,
+    #[pyo3(get)]
     pub solved: bool,
 }
 

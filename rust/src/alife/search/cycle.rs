@@ -1,6 +1,6 @@
 use super::problem::{Problem, ProblemResult};
 use crate::{
-    heuristic::{executors::jit::Jit, parser::HeuristicNode, Heuristic},
+    heuristic::{executors::jit::Jit, Heuristic},
     map::util::Map,
 };
 use rayon::prelude::*;

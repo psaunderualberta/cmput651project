@@ -6,14 +6,10 @@ use std::hash::Hash;
 use std::time::{Duration, Instant};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
-use crate::constants::INITIAL_H_POPULATION_SIZE;
-use crate::heuristic::mutator::mutate_heuristic;
-use crate::heuristic::parser::HeuristicNode;
+
 use crate::heuristic::util::random_heuristic;
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
-
-use super::expansion_tracker::ExpansionTracker;
 
 pub const MAX_POPULATION_SIZE: usize = 10000;
 pub const MAX_BEST_INDIVIDUALS: usize = 10;
@@ -65,7 +61,7 @@ impl GeneticAlgorithm<'_> {
         expansion_bound: usize,
         time_limit: Duration,
         seed: Option<u64>,
-        verbose: bool,
+        _verbose: bool,
     ) -> GeneticAlgorithm<'a> {
         // Seed the random number generator if a seed was provided
         if seed.is_some() {
@@ -151,7 +147,7 @@ impl GeneticAlgorithm<'_> {
                 self.add_heuristic(heuristic);
             }
             for _ in 0..100 {
-                let h = random_heuristic(fastrand::i32(1..=7               ));
+                let h = random_heuristic(fastrand::i32(1..=7));
                 self.add_heuristic(Heuristic::new(h));
             }
             iter_count += 1;

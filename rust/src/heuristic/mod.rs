@@ -3,6 +3,8 @@ pub mod mutator;
 pub mod parser;
 pub mod util;
 
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
 use pyo3::prelude::*;
 
 use parser::HeuristicNode;
@@ -10,14 +12,21 @@ use parser::HeuristicNode;
 #[derive(Debug, Clone, Eq, PartialEq)]
 #[pyclass]
 pub struct Heuristic {
-    root: HeuristicNode,
+    pub root: HeuristicNode,
+    pub creation: Duration,
     size: usize,
 }
 
 impl Heuristic {
     pub fn new(root: HeuristicNode) -> Heuristic {
         let size = heuristic_node_size(root.clone());
-        Heuristic { root, size }
+        Heuristic {
+            root,
+            creation: SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("Backwards time??? :O"),
+            size,
+        }
     }
 
     pub fn root(&self) -> &HeuristicNode {
