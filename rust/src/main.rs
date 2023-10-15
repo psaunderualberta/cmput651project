@@ -18,6 +18,7 @@ use crate::alife::sim::genetic_algorithm::GeneticAlgorithm;
 use crate::constants::PROBLEM_CYCLE_LENGTH;
 use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
+use crate::heuristic::Heuristic;
 
 fn main() {
     let choice = 6;
@@ -150,7 +151,7 @@ fn ga_demo() {
 }
 
 fn eval_heursitic() {
-    let map = parse_map_file(Maps::Den312d.value());
+    let map = parse_map_file(Maps::Den312d.path());
     let seed = Some(42);
 
     let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);

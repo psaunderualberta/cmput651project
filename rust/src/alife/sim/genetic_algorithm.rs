@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
 
+use crate::heuristic::mutator::mutate_heuristic;
 use crate::heuristic::util::random_heuristic;
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
