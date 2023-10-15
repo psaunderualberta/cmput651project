@@ -44,7 +44,7 @@ mod tests {
         (x1, y1, x2, y2): (f32, f32, f32, f32),
         expected: f32,
     ) {
-        let heuristic = Heuristic { root: heuristic };
+        let heuristic = Heuristic::new(heuristic);
         {
             let interpreter = Interpreter::create(&heuristic);
             let result = interpreter.execute(x1, y1, x2, y2);

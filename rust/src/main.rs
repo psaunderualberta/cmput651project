@@ -21,7 +21,7 @@ use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
 
 fn main() {
-    let choice = 7;
+    let choice = 8;
 
     match choice {
         0 => heuristic_demo(),
@@ -31,6 +31,7 @@ fn main() {
         5 => benchmark_executers(),
         6 => alife_demo(),
         7 => ga_demo(),
+        8 => eval_heursitic(),
         _ => {
             unreachable!("Invalid choice in function `main`. Please choose from 0-4");
         }
@@ -50,9 +51,9 @@ fn heuristic_demo() {
 
     let mut h = parse_heuristic("(+ deltaX deltaY)");
     for _ in 0..100 {
-        h.root = mutate_heuristic(&h.root);
-        println!("{}", h.root);
-        println!("{:?}", heuristic_size(&h.root));
+        h = Heuristic::new(mutate_heuristic(h.root()));
+        println!("{}", h.root());
+        println!("{:?}", heuristic_size(h.root()));
     }
 }
 
@@ -147,6 +148,34 @@ fn ga_demo() {
     );
 
     let result = sim.run();
+}
+
+fn eval_heursitic() {
+    let map = parse_map_file(Maps::Den312d.value());
+    let seed = Some(42);
+
+    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let manhattan = parse_heuristic("(+ deltaX deltaY)");
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    baseline.solve_cycle();
+
+    let heuristic = parse_heuristic(
+        // "(* (max deltaX deltaY) 9)",
+        // "(* deltaX 9)",
+        // "(* deltaY 9)",
+        "(* (* (* (* (* (max deltaX deltaY) 9) 9) 9) 9) 9)",
+        // "(max deltaX deltaY)",
+        // "(* deltaX 1)",
+    );
+    let mut individual = CycleSolver::from_cycle(cycle.clone(), &map, heuristic.clone());
+    individual.solve_cycle();
+
+    println!(
+        "Heuristic {:2.2}% expansions of baseline: {}",
+        100.0 * individual.get_total_expansions_in_cycle() as f64
+            / baseline.get_total_expansions_in_cycle() as f64,
+        heuristic.root()
+    );
 }
 
 /* Code for manually creating problems, rather than a single cycle */

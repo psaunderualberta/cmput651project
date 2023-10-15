@@ -73,11 +73,8 @@ impl Simulation<'_> {
         for i in 0..INITIAL_H_POPULATION_SIZE {
             println!("{}", i);
             let h = random_heuristic(-1);
-            let mut cycle = CycleSolver::from_cycle(
-                self.cycle.clone(),
-                self.map,
-                Heuristic { root: h.clone() },
-            );
+            let mut cycle =
+                CycleSolver::from_cycle(self.cycle.clone(), self.map, Heuristic::new(h.clone()));
             let results = cycle.solve_cycle();
             let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
             self.results
@@ -127,7 +124,7 @@ impl Simulation<'_> {
                     let results = CycleSolver::from_cycle(
                         self.cycle.clone(),
                         self.map,
-                        Heuristic { root: h.clone() },
+                        Heuristic::new(h.clone()),
                     )
                     .solve_cycle();
                     let new_tracker =

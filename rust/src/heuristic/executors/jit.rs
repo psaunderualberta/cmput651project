@@ -31,7 +31,7 @@ impl<'a> Jit<'a> {
 
         // Less is just as good as Aggressive, but 3x slower to compile than None (about 50% faster runtime performance)
         let execution_engine = module
-            .create_jit_execution_engine(OptimizationLevel::None)
+            .create_jit_execution_engine(OptimizationLevel::Less)
             .unwrap();
 
         let f32_type = context.f32_type();
