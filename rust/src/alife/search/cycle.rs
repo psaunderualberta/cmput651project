@@ -122,4 +122,16 @@ impl CycleSolver<'_> {
             .map(|r| r.unwrap().expansions.len())
             .sum()
     }
+
+    pub fn get_total_path_length_in_cycle(&self) -> usize {
+        if self.results.clone().into_iter().any(|r| r.is_none()) {
+            return usize::MAX;
+        }
+
+        self.results
+            .clone()
+            .into_iter()
+            .map(|r| r.unwrap().solution_path.len())
+            .sum()
+    }
 }

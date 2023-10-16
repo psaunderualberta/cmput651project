@@ -151,4 +151,31 @@ impl Problem {
             }
         }
     }
+
+    pub fn print_expansions(&self, map: &Map, result: &ProblemResult) {
+        for i in 0..map.map.len() {
+            if i == self.start {
+                print!("{}", "S".blue().bold());
+            } else if i == self.goal {
+                print!("{}", "G".green().bold());
+            } else if result.solution_path.contains(&i) {
+                print!("{}", "+".yellow());
+            } else if result.expansions.contains(&i) {
+                print!("{}", "x".red());
+            } else {
+                match map.map[i] {
+                    // ■ ▣ ▢ • ·
+                    Tile::Passable => print!("·"),
+                    Tile::Unpassable => print!("■"),
+                }
+            }
+
+            // Add space for readability
+            print!(" ");
+
+            if (i + 1) % map.m == 0 {
+                println!();
+            }
+        }
+    }
 }

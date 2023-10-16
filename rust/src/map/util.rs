@@ -5,6 +5,9 @@ pub enum Maps {
     Den009d,
     Den312d,
     Orz103d,
+    Hrt201d,
+    Maze1,
+    Maze2,
 }
 
 impl Maps {
@@ -13,6 +16,9 @@ impl Maps {
             Maps::Den009d => "./src/map/data/den009d.map",
             Maps::Den312d => "./src/map/data/den312d.map",
             Maps::Orz103d => "./src/map/data/orz103d.map",
+            Maps::Hrt201d => "./src/map/data/hrt201d.map",
+            Maps::Maze1 => "./src/map/data/maze1.map",
+            Maps::Maze2 => "./src/map/data/maze2.map",
         }
     }
 
@@ -21,7 +27,12 @@ impl Maps {
             "den009d" => Maps::Den009d.path(),
             "den312d" => Maps::Den312d.path(),
             "orz103d" => Maps::Orz103d.path(),
-            n => { panic!("{n} is not a known map name!")}
+            "hrt201d" => Maps::Hrt201d.path(),
+            "maze1" => Maps::Maze1.path(),
+            "maze2" => Maps::Maze2.path(),
+            n => {
+                panic!("{n} is not a known map name!")
+            }
         }
     }
 }
