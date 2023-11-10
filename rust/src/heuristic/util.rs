@@ -121,6 +121,14 @@ fn random_binary(hsize: i32) -> HeuristicNode {
     }
 }
 
+
+pub fn normalize_vector(vec: &mut Vec<f64>) -> () {
+    let sum: f64 = vec.iter().sum();
+    for i in 0..vec.len() {
+        vec[i] /= sum;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,5 +183,27 @@ mod tests {
             Box::new(HeuristicNode::Terminal(Rule::deltaY)),
         );
         assert_eq!(heuristic_depth(&h3), 3);
+    }
+
+    // Tests for normalize vector
+    #[test]
+    fn test_normalize_vector_1() {
+        let mut vec = vec![1.0, 1.0, 1.0];
+        normalize_vector(&mut vec);
+        assert_eq!(vec, vec![1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0]);
+    }
+
+    #[test]
+    fn test_normalize_vector_2() {
+        let mut vec = vec![1.0, 0.5, 1.0];
+        normalize_vector(&mut vec);
+        assert_eq!(vec, vec![1.0 / 2.5, 0.5 / 2.5, 1.0 / 2.5]);     
+    }
+
+    #[test]
+    fn test_normalize_vector_3() {
+        let mut vec = vec![0.7, 0.5, 0.312, 0.5];
+        normalize_vector(&mut vec);
+        assert_eq!(vec, vec![0.7 / 2.012, 0.5 / 2.012, 0.312 / 2.012, 0.5 / 2.012]);
     }
 }

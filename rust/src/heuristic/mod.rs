@@ -2,6 +2,7 @@ pub mod executors;
 pub mod mutator;
 pub mod parser;
 pub mod util;
+pub mod mutate_probs;
 
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
