@@ -4,8 +4,10 @@ use crate::{
     map::util::Map,
 };
 use rayon::prelude::*;
+use pyo3::pyclass;
 
 #[derive(Clone)]
+#[pyclass]
 pub struct ProblemCycle {
     pub problems: Vec<Problem>,
 }

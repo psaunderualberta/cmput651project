@@ -91,7 +91,7 @@ impl Simulation<'_> {
             if self.verbose {
                 println!("Seeding heuristic #{}", i);
             }
-            let h = Heuristic::new(random_heuristic(-1));
+            let h = Heuristic::new(random_heuristic(-1, &None));
             let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h.clone());
 
             let results = cycle.solve_cycle();
@@ -134,7 +134,7 @@ impl Simulation<'_> {
 
             // Mutate the heuristics to be mutated
             if tracker.consume_mutation() {
-                let new_h = mutate_heuristic(&tracker.get_heuristic().root);
+                let new_h = mutate_heuristic(&tracker.get_heuristic().root, &None);
                 let heuristic = Heuristic::new(new_h);
                 let results =
                     CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone())

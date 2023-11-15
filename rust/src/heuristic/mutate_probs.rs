@@ -1,3 +1,5 @@
+use pyo3::prelude::*;
+
 use crate::heuristic::util::normalize_vector;
 use std::collections::HashMap;
 
@@ -9,6 +11,8 @@ pub enum Term {
     Number,
 }
 
+#[derive(Clone)]
+#[pyclass]
 pub struct TermProbabilities {
     pub binaries: Vec<f64>,
     pub unaries: Vec<f64>,
@@ -22,7 +26,7 @@ impl TermProbabilities {
         num_terms.insert(Term::Binary, 6);
         num_terms.insert(Term::Unary, 4);
         num_terms.insert(Term::Terminal, 6);
-        num_terms.insert(Term::Number, 18); // -9 to 9, except 0
+        num_terms.insert(Term::Number, 9); // 1 to 9
 
         match uniform {
             true => TermProbabilities {
@@ -42,6 +46,40 @@ impl TermProbabilities {
         }
     }
 
+    pub fn from_hashmap(hashmap: HashMap<String, Vec<f64>>) -> TermProbabilities {
+        let mut result = TermProbabilities {
+            binaries: Vec::new(),
+            unaries: Vec::new(),
+            terminals: Vec::new(),
+            numbers: Vec::new(),
+        };
+
+        assert!(hashmap.len() == 4, "Invalid hashmap length");
+
+        for (key, value) in hashmap {
+            match key.as_str() {
+                "binaries" => result.binaries = value,
+                "unaries" => result.unaries = value,
+                "terminals" => result.terminals = value,
+                "numbers" => result.numbers = value,
+                _ => {
+                    unreachable!("Invalid key '{}' in hashmap", key);
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn get(self: &Self, t: Term) -> &Vec<f64> {
+        match t {
+            Term::Binary => &self.binaries,
+            Term::Unary => &self.unaries,
+            Term::Terminal => &self.terminals,
+            Term::Number => &self.numbers,
+        }
+    }
+
     fn uniform_vector(num_elements: i32) -> Vec<f64> {
         vec![1.0 / num_elements as f64; num_elements as usize]
     }
@@ -55,11 +93,7 @@ impl TermProbabilities {
         }
 
         // Normalize so that sum(vec) = 1
-        let sum: f64 = vec.iter().sum();
-        for i in 0..num_elements {
-            vec[i as usize] /= sum;
-        }
-
+        normalize_vector(&mut vec);
         vec
     }
 

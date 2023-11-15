@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
 
+use crate::heuristic::mutate_probs::TermProbabilities;
 use crate::heuristic::mutator::mutate_heuristic;
 use crate::heuristic::util::random_heuristic;
 use crate::heuristic::Heuristic;
@@ -66,6 +67,7 @@ pub struct GeneticAlgorithm<'a> {
     pub population: HashSet<Individual>,
     pub popvec: Vec<Individual>,
     pub best_individuals: Vec<Individual>,
+    pub term_probs: Option<TermProbabilities>,
 }
 
 impl GeneticAlgorithm<'_> {
@@ -75,6 +77,7 @@ impl GeneticAlgorithm<'_> {
         baseline: &'a CycleSolver,
         expansion_bound: usize,
         time_limit: Duration,
+        term_probs: Option<TermProbabilities>,
         seed: Option<u64>,
         _verbose: bool,
     ) -> GeneticAlgorithm<'a> {
@@ -95,6 +98,7 @@ impl GeneticAlgorithm<'_> {
             population: HashSet::with_capacity(MAX_POPULATION_SIZE + 100),
             popvec: Vec::with_capacity(MAX_POPULATION_SIZE + 100),
             best_individuals: Vec::with_capacity(MAX_BEST_INDIVIDUALS + 1),
+            term_probs
         }
     }
 
@@ -157,13 +161,13 @@ impl GeneticAlgorithm<'_> {
             // }
             let mutated: Vec<Heuristic> = selected
                 .par_iter()
-                .map(|individual| Heuristic::new(mutate_heuristic(individual.heuristic.root())))
+                .map(|individual| Heuristic::new(mutate_heuristic(individual.heuristic.root(), &self.term_probs)))
                 .collect();
             for heuristic in mutated {
                 self.add_heuristic(heuristic);
             }
             for _ in 0..100 {
-                let h = random_heuristic(fastrand::i32(1..=7));
+                let h = random_heuristic(fastrand::i32(1..=7), &self.term_probs);
                 self.add_heuristic(Heuristic::new(h));
             }
             iter_count += 1;

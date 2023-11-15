@@ -21,7 +21,7 @@ use crate::heuristic::executors::HeuristicExecuter;
 use crate::heuristic::Heuristic;
 
 fn main() {
-    let choice = 6;
+    let choice = 7;
 
     match choice {
         0 => heuristic_demo(),
@@ -47,11 +47,11 @@ fn heuristic_demo() {
                                         (min x1 (neg (abs (abs (neg (sqrt (sqr x2))))))))"
         )
     );
-    println!("{:?}", random_heuristic(2));
+    println!("{:?}", random_heuristic(2, &None));
 
     let mut h = parse_heuristic("(+ deltaX deltaY)");
     for _ in 0..100 {
-        h = Heuristic::new(mutate_heuristic(h.root()));
+        h = Heuristic::new(mutate_heuristic(h.root(), &None));
         println!("{}", h.root());
         println!("{:?}", heuristic_size(h.root()));
     }
@@ -135,14 +135,15 @@ fn ga_demo() {
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
     let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
     baseline.solve_cycle();
-    let expansion_limit = baseline.get_total_expansions_in_cycle() * 5;
+    let expansion_limit: usize = baseline.get_total_expansions_in_cycle() * 5;
 
     let mut sim = GeneticAlgorithm::new(
         &map,
         cycle,
         &baseline,
         expansion_limit,
-        Duration::from_secs(24 * 60 * 60),
+        Duration::from_secs(10),
+        None,
         seed,
         true,
     );

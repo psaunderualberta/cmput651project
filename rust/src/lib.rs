@@ -3,11 +3,14 @@ pub mod constants;
 pub mod heuristic;
 pub mod map;
 
+use std::collections::HashMap;
 use std::time::Duration;
 
 use alife::search::cycle::{CycleSolver, ProblemCycle};
+use alife::sim::genetic_algorithm::GeneticAlgorithm;
 use alife::sim::simulator::{Simulation, SimulationResult};
 use constants::PROBLEM_CYCLE_LENGTH;
+use heuristic::mutate_probs::TermProbabilities;
 use pyo3::prelude::*;
 use pyo3::{pymodule, types::PyModule, Python};
 
@@ -15,7 +18,7 @@ use alife::search::problem::{Problem, ProblemResult};
 use heuristic::parser::parse_heuristic;
 use heuristic::Heuristic;
 use map::parser::parse_map_file;
-use map::util::Maps;
+use map::util::{Maps, Map};
 
 use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
@@ -25,6 +28,8 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
     m.add_function(wrap_pyfunction!(test_heuristic, m)?)?;
     m.add_function(wrap_pyfunction!(solve_cycle_on_map, m)?)?;
+    m.add_function(wrap_pyfunction!(get_problems, m)?)?;
+    m.add_function(wrap_pyfunction!(random_term_probabilities, m)?)?;
 
     let heuristic_module = PyModule::new(py, "heuristic")?;
     heuristic_module.add_function(wrap_pyfunction!(manhattan_distance, m)?)?;
@@ -34,6 +39,10 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     let alife_module = PyModule::new(py, "alife")?;
     alife_module.add_function(wrap_pyfunction!(simulation, m)?)?;
     m.add_submodule(alife_module)?;
+
+    let ga_module = PyModule::new(py, "genetic_algorithm")?;
+    ga_module.add_function(wrap_pyfunction!(genetic_algorithm, m)?)?;
+    m.add_submodule(ga_module)?;
 
     Ok(())
 }
@@ -48,6 +57,19 @@ fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
     println!("Debugging disabled");
 
     Ok((a + b).to_string())
+}
+
+#[pyfunction]
+fn get_problems(map_name: String) -> PyResult<(Map, ProblemCycle)> {
+    let map_path = Maps::name2path(map_name.as_str());
+    let map = parse_map_file(map_path);
+
+    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let manhattan = parse_heuristic("(+ deltaX deltaY)");
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    baseline.solve_cycle();
+
+    Ok((map, cycle))
 }
 
 #[pyfunction]
@@ -110,4 +132,32 @@ fn simulation(map_name: String, seed: u64, secs: u64) -> PyResult<SimulationResu
 #[pyfunction]
 fn manhattan_distance() -> PyResult<Heuristic> {
     Ok(parse_heuristic("(+ deltaX deltaY)"))
+}
+
+#[pyfunction]
+fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u64, secs: u64) -> PyResult<()> {
+    let manhattan = parse_heuristic("(+ deltaX deltaY)");
+    let mut baseline = CycleSolver::from_cycle(c.clone(), &m, manhattan);
+    baseline.solve_cycle();
+
+    let time_limit = Duration::from_secs(secs);
+    let expansion_limit: usize = baseline.get_total_expansions_in_cycle() * 5;
+
+    let mut sim = GeneticAlgorithm::new(
+        &m,
+        c,
+        &baseline,
+        expansion_limit,
+        time_limit,
+        Some(probs),
+        Some(seed),
+        true,
+    );
+
+    Ok(sim.run())
+}
+
+#[pyfunction]
+fn random_term_probabilities(uniform: bool) -> PyResult<TermProbabilities> {
+    Ok(TermProbabilities::new(uniform))   
 }

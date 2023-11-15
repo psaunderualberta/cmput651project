@@ -1,4 +1,5 @@
 use std::{collections::HashSet, fmt::Display};
+use pyo3::prelude::*;
 
 // Enumeration for possible maps on which to search.
 pub enum Maps {
@@ -50,6 +51,8 @@ pub enum Tile {
     Unpassable,
 }
 
+#[derive(Clone)]
+#[pyclass]
 pub struct Map {
     pub n: usize,
     pub m: usize,
