@@ -2,42 +2,42 @@ use crate::heuristic::util::normalize_vector;
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
-pub enum MutationType {
+pub enum Term {
     Binary,
     Unary,
     Terminal,
     Number,
 }
 
-pub struct MutationProbabilities {
+pub struct TermProbabilities {
     pub binaries: Vec<f64>,
     pub unaries: Vec<f64>,
     pub terminals: Vec<f64>,
     pub numbers: Vec<f64>,
 }
 
-impl MutationProbabilities {
-    pub fn new(uniform: bool) -> MutationProbabilities {
+impl TermProbabilities {
+    pub fn new(uniform: bool) -> TermProbabilities {
         let mut num_terms = HashMap::new();
-        num_terms.insert(MutationType::Binary, 6);
-        num_terms.insert(MutationType::Unary, 4);
-        num_terms.insert(MutationType::Terminal, 6);
-        num_terms.insert(MutationType::Number, 18); // -9 to 9, except 0
+        num_terms.insert(Term::Binary, 6);
+        num_terms.insert(Term::Unary, 4);
+        num_terms.insert(Term::Terminal, 6);
+        num_terms.insert(Term::Number, 18); // -9 to 9, except 0
 
         match uniform {
-            true => MutationProbabilities {
-                binaries: MutationProbabilities::uniform_vector(num_terms[&MutationType::Binary]),
-                unaries: MutationProbabilities::uniform_vector(num_terms[&MutationType::Unary]),
-                terminals: MutationProbabilities::uniform_vector(
-                    num_terms[&MutationType::Terminal],
+            true => TermProbabilities {
+                binaries: TermProbabilities::uniform_vector(num_terms[&Term::Binary]),
+                unaries: TermProbabilities::uniform_vector(num_terms[&Term::Unary]),
+                terminals: TermProbabilities::uniform_vector(
+                    num_terms[&Term::Terminal],
                 ),
-                numbers: MutationProbabilities::uniform_vector(num_terms[&MutationType::Number]),
+                numbers: TermProbabilities::uniform_vector(num_terms[&Term::Number]),
             },
-            false => MutationProbabilities {
-                binaries: MutationProbabilities::random_vector(num_terms[&MutationType::Binary]),
-                unaries: MutationProbabilities::random_vector(num_terms[&MutationType::Unary]),
-                terminals: MutationProbabilities::random_vector(num_terms[&MutationType::Terminal]),
-                numbers: MutationProbabilities::random_vector(num_terms[&MutationType::Number]),
+            false => TermProbabilities {
+                binaries: TermProbabilities::random_vector(num_terms[&Term::Binary]),
+                unaries: TermProbabilities::random_vector(num_terms[&Term::Unary]),
+                terminals: TermProbabilities::random_vector(num_terms[&Term::Terminal]),
+                numbers: TermProbabilities::random_vector(num_terms[&Term::Number]),
             },
         }
     }
@@ -64,7 +64,7 @@ impl MutationProbabilities {
     }
 
     fn crossover(&self, other: &Self) -> Self {
-        let mut result = MutationProbabilities {
+        let mut result = TermProbabilities {
             binaries: Vec::new(),
             unaries: Vec::new(),
             terminals: Vec::new(),

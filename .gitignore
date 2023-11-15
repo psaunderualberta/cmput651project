@@ -2,3 +2,4 @@ target/
 .vscode/
 .bash_history
 out/
+plots/

@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 
-FILENAME = os.path.join(os.path.dirname(__file__), "..", "analysis-data", "10-14-23.pickle")
+FILENAME = os.path.join(os.path.dirname(__file__), "..", "analysis-data", "10-16-23.pickle")
 
 def plot_best_scores_time(filename):
     alife_data = pd.read_pickle(filename)
@@ -12,11 +12,11 @@ def plot_best_scores_time(filename):
     seed_data = []
 
     # Setting plot characteristics
-    plt.figure(figsize=(10, 6))
-    font = {'size': 16}
+    plt.figure(figsize=(15, 8))
+    font = {'size': 24}
     plt.rc('font', **font)
-    plt.rc('xtick', labelsize=12)
-    plt.rc('ytick', labelsize=12)
+    plt.rc('xtick', labelsize=24)
+    plt.rc('ytick', labelsize=24)
     plt.xlabel('Time (Every 30s)')
     plt.ylabel('Best Heuristic Score')
     plt.title('Best Score of Heuristics Every 30s')
@@ -38,7 +38,7 @@ def plot_best_scores_time(filename):
         min_scores_list = min_scores_df['cumulative_min'].to_numpy()
         intervals = min_scores_df['group'].to_numpy()
 
-        plt.plot(intervals, min_scores_list, label='seed ' + str(i), linestyle='--', alpha=0.4)
+        plt.plot(intervals, min_scores_list, linestyle='--', alpha=0.4)
 
         i += 1
 
@@ -46,11 +46,12 @@ def plot_best_scores_time(filename):
     combined_df.sort_values(by=['group'])
     avg_scores = combined_df.groupby('group')['cumulative_min'].mean().reset_index()
 
-    plt.plot(combined_df['group'].unique()[:-1], avg_scores['cumulative_min'][:-1], label='Average')
+    plt.plot(combined_df['group'].unique()[:-1], avg_scores['cumulative_min'][:-1], label='Average', linewidth=3)
 
-    plt.legend(fontsize='x-small')
+    plt.legend(fontsize='medium')
     plt.savefig('plots/best_scores_time')
     plt.clf()
+    plt.close()
 
 
 def plot_average_scores_time(filename):
@@ -83,6 +84,7 @@ def plot_average_scores_time(filename):
         plt.grid(True)
         plt.savefig('plots/seed' + str(i) + '_avg_scores_time')
         plt.clf()
+        plt.close()
 
         i += 1
 
@@ -103,7 +105,8 @@ def plot_all_scores(filename):
         plt.rc('font', **font)
         plt.rc('xtick', labelsize=12)
         plt.rc('ytick', labelsize=12)
-        plt.scatter(df['creation'], df['score'], label='Heuristic Scores')
+        plt.scatter(df['creation'], df['score'], label='Heuristic Scores', alpha=0.4)
+
         plt.xlabel('Time')
         plt.ylabel('Score')
         plt.title('Scatter Plot of Heuristic Scores Over Time')
@@ -111,6 +114,9 @@ def plot_all_scores(filename):
 
         plt.grid(True)
         plt.savefig('plots/seed' + str(i) + '_scatter_plot')
+        plt.clf()
+        plt.close()
+
         i += 1
 
 
@@ -141,11 +147,13 @@ def plot_histogram(filename):
 
         plt.grid(True)
         plt.savefig('plots/seed' + str(i) + '_heuristics_histogram')
+        plt.clf()
+        plt.close()
         i += 1
 
 
 plot_best_scores_time(FILENAME)
-plot_average_scores_time(FILENAME)
-plot_histogram(FILENAME)
-plot_score_path_length(FILENAME)
-plot_all_scores(FILENAME)
+# plot_average_scores_time(FILENAME)
+# plot_histogram(FILENAME)
+# plot_score_path_length(FILENAME)
+# plot_all_scores(FILENAME)
