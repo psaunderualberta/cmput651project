@@ -29,19 +29,21 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(test_heuristic, m)?)?;
     m.add_function(wrap_pyfunction!(solve_cycle_on_map, m)?)?;
     m.add_function(wrap_pyfunction!(get_problems, m)?)?;
-    m.add_function(wrap_pyfunction!(random_term_probabilities, m)?)?;
-
+    
     let heuristic_module = PyModule::new(py, "heuristic")?;
     heuristic_module.add_function(wrap_pyfunction!(manhattan_distance, m)?)?;
     m.add_submodule(heuristic_module)?;
-
+    
     // Alife module
     let alife_module = PyModule::new(py, "alife")?;
     alife_module.add_function(wrap_pyfunction!(simulation, m)?)?;
     m.add_submodule(alife_module)?;
-
+    
     let ga_module = PyModule::new(py, "genetic_algorithm")?;
     ga_module.add_function(wrap_pyfunction!(genetic_algorithm, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(random_term_probabilities, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(crossover_probabilities, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(mutate_probabilities, m)?)?;
     m.add_submodule(ga_module)?;
 
     Ok(())
@@ -155,6 +157,16 @@ fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u6
     );
 
     Ok(sim.run())
+}
+
+#[pyfunction]
+fn crossover_probabilities(probs1: TermProbabilities, probs2: TermProbabilities) -> PyResult<TermProbabilities> {
+    Ok(probs1.crossover(&probs2))
+}
+
+#[pyfunction]
+fn mutate_probabilities(probs: TermProbabilities, mut_prob: f64) -> PyResult<TermProbabilities> {
+    Ok(probs.mutate(mut_prob))
 }
 
 #[pyfunction]

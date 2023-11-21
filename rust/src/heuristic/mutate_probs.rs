@@ -14,9 +14,13 @@ pub enum Term {
 #[derive(Clone)]
 #[pyclass]
 pub struct TermProbabilities {
+    #[pyo3(get)]
     pub binaries: Vec<f64>,
+    #[pyo3(get)]
     pub unaries: Vec<f64>,
+    #[pyo3(get)]
     pub terminals: Vec<f64>,
+    #[pyo3(get)]
     pub numbers: Vec<f64>,
 }
 
@@ -97,7 +101,7 @@ impl TermProbabilities {
         vec
     }
 
-    fn crossover(&self, other: &Self) -> Self {
+    pub fn crossover(&self, other: &Self) -> Self {
         let mut result = TermProbabilities {
             binaries: Vec::new(),
             unaries: Vec::new(),
@@ -127,34 +131,38 @@ impl TermProbabilities {
         result
     }
 
-    fn mutate(&mut self, mut_prob: f64) -> () {
+    pub fn mutate(self, mut_prob: f64) -> Self {
+        let mut copy = TermProbabilities { ..self };
+
         // With probability 'mut_prob', change the value of each element in
         // every vector to a random number between 0 and 1
-        for i in 0..self.binaries.len() {
+        for i in 0..copy.binaries.len() {
             if fastrand::f64() < mut_prob {
-                self.binaries[i] = fastrand::f64();
+                copy.binaries[i] = fastrand::f64();
             }
         }
-        for i in 0..self.unaries.len() {
+        for i in 0..copy.unaries.len() {
             if fastrand::f64() < mut_prob {
-                self.unaries[i] = fastrand::f64();
+                copy.unaries[i] = fastrand::f64();
             }
         }
-        for i in 0..self.terminals.len() {
+        for i in 0..copy.terminals.len() {
             if fastrand::f64() < mut_prob {
-                self.terminals[i] = fastrand::f64();
+                copy.terminals[i] = fastrand::f64();
             }
         }
-        for i in 0..self.numbers.len() {
+        for i in 0..copy.numbers.len() {
             if fastrand::f64() < mut_prob {
-                self.numbers[i] = fastrand::f64();
+                copy.numbers[i] = fastrand::f64();
             }
         }
 
         // Re-normalize so that sum(vec) = 1
-        normalize_vector(&mut self.binaries);
-        normalize_vector(&mut self.unaries);
-        normalize_vector(&mut self.terminals);
-        normalize_vector(&mut self.numbers);
+        normalize_vector(&mut copy.binaries);
+        normalize_vector(&mut copy.unaries);
+        normalize_vector(&mut copy.terminals);
+        normalize_vector(&mut copy.numbers);
+
+        copy
     }
 }
