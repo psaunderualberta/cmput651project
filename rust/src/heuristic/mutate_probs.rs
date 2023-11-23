@@ -11,6 +11,29 @@ pub enum Term {
     Number,
 }
 
+impl Term {
+    pub fn from_str(s: &str) -> Term {
+        match s {
+            "binaries" => Term::Binary,
+            "unaries" => Term::Unary,
+            "terminals" => Term::Terminal,
+            "numbers" => Term::Number,
+            _ => {
+                unreachable!("Invalid term type '{}'", s);
+            }
+        }
+    }
+
+    pub fn to_str(self: &Self) -> &str {
+        match self {
+            Term::Binary => "binaries",
+            Term::Unary => "unaries",
+            Term::Terminal => "terminals",
+            Term::Number => "numbers",
+        }
+    }
+}
+
 #[derive(Clone)]
 #[pyclass]
 pub struct TermProbabilities {
@@ -36,9 +59,7 @@ impl TermProbabilities {
             true => TermProbabilities {
                 binaries: TermProbabilities::uniform_vector(num_terms[&Term::Binary]),
                 unaries: TermProbabilities::uniform_vector(num_terms[&Term::Unary]),
-                terminals: TermProbabilities::uniform_vector(
-                    num_terms[&Term::Terminal],
-                ),
+                terminals: TermProbabilities::uniform_vector(num_terms[&Term::Terminal]),
                 numbers: TermProbabilities::uniform_vector(num_terms[&Term::Number]),
             },
             false => TermProbabilities {
@@ -164,5 +185,20 @@ impl TermProbabilities {
         normalize_vector(&mut copy.numbers);
 
         copy
+    }
+
+    pub fn get_operator_order(&self, operators: &str) -> Vec<String> {
+        let result = match operators {
+            "binaries" => vec!["plus", "div", "mul", "minus", "max", "min"],
+            "unaries" => vec!["neg", "abs", "sqrt", "sqr"],
+            "terminals" => vec!["x1", "x2", "y1", "y2", "deltaX", "deltaY"],
+            "numbers" => vec!["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            _ => unreachable!(
+                "Invalid operator type '{}' in get_operator_order",
+                operators
+            ),
+        };
+
+        result.iter().map(|s| s.to_string()).collect()
     }
 }

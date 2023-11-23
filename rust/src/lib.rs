@@ -10,7 +10,7 @@ use alife::search::cycle::{CycleSolver, ProblemCycle};
 use alife::sim::genetic_algorithm::GeneticAlgorithm;
 use alife::sim::simulator::{Simulation, SimulationResult};
 use constants::PROBLEM_CYCLE_LENGTH;
-use heuristic::mutate_probs::TermProbabilities;
+use heuristic::mutate_probs::{TermProbabilities, Term};
 use pyo3::prelude::*;
 use pyo3::{pymodule, types::PyModule, Python};
 
@@ -44,6 +44,7 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     ga_module.add_function(wrap_pyfunction!(random_term_probabilities, m)?)?;
     ga_module.add_function(wrap_pyfunction!(crossover_probabilities, m)?)?;
     ga_module.add_function(wrap_pyfunction!(mutate_probabilities, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(probabilities2dict, m)?)?;
     m.add_submodule(ga_module)?;
 
     Ok(())
@@ -137,7 +138,7 @@ fn manhattan_distance() -> PyResult<Heuristic> {
 }
 
 #[pyfunction]
-fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u64, secs: u64) -> PyResult<()> {
+fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u64, secs: u64) -> PyResult<Vec<(String, f64)>> {
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
     let mut baseline = CycleSolver::from_cycle(c.clone(), &m, manhattan);
     baseline.solve_cycle();
@@ -172,4 +173,22 @@ fn mutate_probabilities(probs: TermProbabilities, mut_prob: f64) -> PyResult<Ter
 #[pyfunction]
 fn random_term_probabilities(uniform: bool) -> PyResult<TermProbabilities> {
     Ok(TermProbabilities::new(uniform))   
+}
+
+#[pyfunction]
+fn probabilities2dict(probs: TermProbabilities) -> PyResult<HashMap<String, HashMap<String, f64>>> {
+    let mut dict = HashMap::new();
+
+    for term in vec!["binaries", "unaries", "terminals", "numbers"] {
+        let mut term_dict = HashMap::new();
+        let term_probs = probs.get(Term::from_str(term));
+        let operators = probs.get_operator_order(term);
+
+        for (operator, prob) in operators.iter().zip(term_probs.iter()) {
+            term_dict.insert(operator.to_string(), *prob);
+        }
+
+        dict.insert(term.to_string(), term_dict);
+    }
+    Ok(dict)
 }

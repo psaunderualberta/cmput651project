@@ -64,7 +64,7 @@ fn random_number(term_probs: &Option<TermProbabilities>) -> HeuristicNode {
 
     HeuristicNode::Number(random_weighted_sample::<i32>(
         term_probs.as_ref().unwrap().get(Term::Number),
-        items,
+        &items,
     ))
 }
 
@@ -80,7 +80,7 @@ fn random_terminal(term_probs: &Option<TermProbabilities>) -> HeuristicNode {
 
     HeuristicNode::Terminal(random_weighted_sample::<Rule>(
         term_probs.as_ref().unwrap().get(Term::Terminal),
-        items,
+        &items,
     ))
 }
 
@@ -89,7 +89,7 @@ fn random_unary(hsize: i32, term_probs: &Option<TermProbabilities>) -> Heuristic
     let items = vec![Rule::neg, Rule::abs, Rule::sqrt, Rule::sqr];
 
     HeuristicNode::Unary(
-        random_weighted_sample::<Rule>(term_probs.as_ref().unwrap().get(Term::Unary), items),
+        random_weighted_sample::<Rule>(term_probs.as_ref().unwrap().get(Term::Unary), &items),
         sub,
     )
 }
@@ -110,13 +110,13 @@ fn random_binary(hsize: i32, term_probs: &Option<TermProbabilities>) -> Heuristi
     ];
 
     HeuristicNode::Binary(
-        random_weighted_sample::<Rule>(term_probs.as_ref().unwrap().get(Term::Binary), items),
+        random_weighted_sample::<Rule>(term_probs.as_ref().unwrap().get(Term::Binary), &items),
         left,
         right,
     )
 }
 
-pub fn random_weighted_sample<T: Clone>(probs: &Vec<f64>, items: Vec<T>) -> T {
+pub fn random_weighted_sample<T: Clone>(probs: &Vec<f64>, items: &Vec<T>) -> T {
     let mut cum_probs = Vec::new();
     let mut cum_prob = 0.0;
     for prob in probs {
