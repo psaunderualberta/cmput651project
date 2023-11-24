@@ -21,7 +21,7 @@ def main():
         "DEBUG": False,
         "FITNESS_LOG": f"../python/out/{int(start_time)}-data.csv",
         "PROB_LOG": f"../python/out/{int(start_time)}-log.csv",
-        "TIMEOUT": 60,
+        "TIMEOUT": 24 * 60 * 60,
     }
 
     # Create log files
