@@ -15,9 +15,20 @@ use crate::heuristic::util::{normalize_vector, random_weighted_sample};
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
 
-// 10,000 is WAYYYYY too many. Decreased MAX_POPULATION_SIZE to 100
+// 10,000 is WAYYYYY too many. Decreased MAX_POPULATION_SIZE to 40
 pub const MAX_POPULATION_SIZE: usize = 40;
 pub const MAX_BEST_INDIVIDUALS: usize = 10;
+
+#[derive(Debug, Clone)]
+#[pyclass]
+pub struct GeneticAlgorithmResult {
+    #[pyo3(get)]
+    pub best_heuristics: Vec<String>,
+    #[pyo3(get)]
+    pub best_fitnesses: Vec<f64>,
+    #[pyo3(get)]
+    pub history: Vec<Vec<(String, f64)>>,
+}
 
 #[derive(Debug, Clone)]
 pub struct Individual {
@@ -104,9 +115,11 @@ impl GeneticAlgorithm {
         }
     }
 
-    pub fn run(&mut self) -> Vec<(String, f64)> {
+    pub fn run(&mut self) -> GeneticAlgorithmResult {
+        let mut history = Vec::new();
+
         for _ in 0..self.max_population_size {
-            let h = random_heuristic(MAX_TREE_SIZE, &self.term_probs);
+            let h = random_heuristic(fastrand::i32(1..=MAX_TREE_SIZE), &self.term_probs);
             self.h_population.push(Heuristic::new(h));
         }
 
@@ -116,6 +129,7 @@ impl GeneticAlgorithm {
 
         let mut generation_number = 0;
         while timer.elapsed() < self.time_limit {
+            // Update the generation number
             generation_number += 1;
 
             // Solve the problem cycle with each heuristic in the population
@@ -124,6 +138,19 @@ impl GeneticAlgorithm {
                 .iter()
                 .map(|heuristic| self.compute_individual(heuristic.clone()))
                 .collect();
+
+            // Add the current population to the history vector
+            history.push(
+                self.i_population
+                    .iter()
+                    .map(|individual| {
+                        (
+                            individual.heuristic.root().to_string(),
+                            individual.fitness(self.baseline_expansions, self.baseline_path_len),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            );
 
             // Update the best individuals
             self.best_individuals
@@ -164,15 +191,19 @@ impl GeneticAlgorithm {
 
         println!("{}", generation_number);
 
-        self.best_individuals
-            .iter()
-            .map(|individual| {
-                (
-                    individual.heuristic.root().to_string(),
-                    individual.fitness(self.baseline_expansions, self.baseline_path_len),
-                )
-            })
-            .collect::<Vec<_>>()
+        GeneticAlgorithmResult {
+            best_heuristics: self
+                .best_individuals
+                .iter()
+                .map(|i| i.heuristic.root().to_string())
+                .collect(),
+            best_fitnesses: self
+                .best_individuals
+                .iter()
+                .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
+                .collect(),
+            history,
+        }
     }
 
     fn compute_individual(&self, heuristic: Heuristic) -> Individual {
