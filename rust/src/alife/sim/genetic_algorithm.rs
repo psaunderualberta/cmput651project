@@ -84,7 +84,7 @@ pub struct GeneticAlgorithm {
 }
 
 impl GeneticAlgorithm {
-    pub fn new<'a>(
+    pub fn new(
         map: Map,
         cycle: ProblemCycle,
         baseline: CycleSolver,
@@ -242,8 +242,9 @@ impl GeneticAlgorithm {
         let mut selected = Vec::with_capacity(n);
 
         while selected.len() < n {
-            selected
-                .push(random_weighted_sample::<Individual>(&weights, &self.i_population).clone());
+            selected.push(
+                random_weighted_sample::<Individual>(weights, &self.best_individuals).clone(),
+            );
         }
 
         // return the selected individuals
@@ -299,10 +300,15 @@ impl GeneticAlgorithm {
 #[pymethods]
 impl GeneticAlgorithm {
     pub fn initialize_ga(&mut self) {
-        for _ in 0..self.max_population_size {
+        let mut h_population: Vec<Heuristic> = Vec::with_capacity(1000);
+        for _ in 0..1000 {
             let h = random_heuristic(MAX_TREE_SIZE, &self.term_probs);
-            self.h_population.push(Heuristic::new(h));
+            h_population.push(Heuristic::new(h));
         }
+        self.best_individuals = h_population
+            .par_iter()
+            .map(|heuristic| self.compute_individual(heuristic.clone()))
+            .collect();
     }
 
     pub fn step_with_probs(
@@ -313,7 +319,10 @@ impl GeneticAlgorithm {
 
         let mut prob_performance: Vec<f64> = vec![0.0; probs.len()];
 
-        for _ in 0..5 {
+        let rounds = 5;
+        let mutations_per_prob = 10;
+
+        for _ in 0..rounds {
             // Get the fitnesses in the current population
             let mut weights = self
                 .best_individuals
@@ -325,7 +334,8 @@ impl GeneticAlgorithm {
             normalize_vector(&mut weights);
 
             // Get the individuals in the next population
-            let next_population = self.select_n_individuals(probs.len() * 10, &weights);
+            let next_population =
+                self.select_n_individuals(probs.len() * mutations_per_prob, &weights);
 
             let before = (&next_population)
                 .iter()
@@ -349,7 +359,7 @@ impl GeneticAlgorithm {
                 .map(|(individual, i)| {
                     Heuristic::new(mutate_heuristic(
                         individual.heuristic.root(),
-                        &Some(probs[i / 10].clone()),
+                        &Some(probs[i / mutations_per_prob].clone()),
                     ))
                 })
                 .collect();
@@ -366,8 +376,11 @@ impl GeneticAlgorithm {
                 .collect::<Vec<_>>();
 
             for p in 0..probs.len() {
-                for i in 0..10 {
-                    prob_performance[p] += (after[p * 10 + i] - before[p * 10 + i]).max(0.0);
+                for i in 0..mutations_per_prob {
+                    prob_performance[p] += (after[p * mutations_per_prob + i]
+                        - before[p * mutations_per_prob + i])
+                        .max(0.0)
+                        .powi(2);
                 }
             }
 
@@ -395,8 +408,13 @@ impl GeneticAlgorithm {
             //     }
             //     println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
             //     iter_count = 0;
-            //     next_log = timer.elapsed() + Duration::from_secs(10);
+            //     next_log = timer.elapsed() + Duration::from_secs(mutations_per_prob);
             // }
+        }
+
+        // divide prob_performance by 5 * 10
+        for p in 0..probs.len() {
+            prob_performance[p] /= (rounds * mutations_per_prob) as f64;
         }
 
         (
@@ -412,6 +430,8 @@ impl GeneticAlgorithm {
                 .collect::<Vec<_>>(),
             prob_performance,
         )
+
+        // prob_performance
     }
 }
 

@@ -117,6 +117,16 @@ fn random_binary(hsize: i32, term_probs: &Option<TermProbabilities>) -> Heuristi
 }
 
 pub fn random_weighted_sample<T: Clone>(probs: &Vec<f64>, items: &Vec<T>) -> T {
+    // throw error if probs has length 0
+    if probs.len() == 0 {
+        panic!("probs has length 0");
+    }
+
+    // throw error if probs and items have different lengths
+    if probs.len() != items.len() {
+        panic!("probs and items have different lengths");
+    }
+
     let mut cum_probs = Vec::new();
     let mut cum_prob = 0.0;
     for prob in probs {
