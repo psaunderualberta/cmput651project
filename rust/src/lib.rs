@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use alife::search::cycle::{CycleSolver, ProblemCycle};
-use alife::sim::genetic_algorithm::GeneticAlgorithm;
+use alife::sim::genetic_algorithm::{GeneticAlgorithm, GeneticAlgorithmResult};
 use alife::sim::simulator::{Simulation, SimulationResult};
 use constants::PROBLEM_CYCLE_LENGTH;
 use heuristic::mutate_probs::{TermProbabilities, Term};
@@ -138,7 +138,7 @@ fn manhattan_distance() -> PyResult<Heuristic> {
 }
 
 #[pyfunction]
-fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u64, secs: u64) -> PyResult<Vec<(String, f64)>> {
+fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u64, secs: u64) -> PyResult<GeneticAlgorithmResult> {
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
     let mut baseline = CycleSolver::from_cycle(c.clone(), &m, manhattan);
     baseline.solve_cycle();

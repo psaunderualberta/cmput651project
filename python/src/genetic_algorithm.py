@@ -14,23 +14,24 @@ def main():
 
     config = {
         "MAP_NAME": "maze2",
-        "POPULATION_SIZE": 30,
-        "SECONDS_PER_GA": 30,
+        "POPULATION_SIZE": 12,
+        "SECONDS_PER_GA": 60 * 60,
         "GA_SEED": 42,
         "MUTATION_PROBABILITY": 0.1,
         "DEBUG": False,
-        "FITNESS_LOG": f"../python/out/{int(start_time)}-data.csv",
+        "BEST_LOG": f"../python/out/{int(start_time)}-data.csv",
         "PROB_LOG": f"../python/out/{int(start_time)}-log.csv",
-        "TIMEOUT": 24 * 60 * 60,
+        "HISTORY_LOG": f"../python/out/{int(start_time)}-history.csv",
+        "TIMEOUT": 1,
     }
 
     # Create log files
-    with open(config["FITNESS_LOG"], "w") as f_log:
+    with open(config["BEST_LOG"], "w") as f_log:
         f_log.write("Generation | Heuristics | Fitnesses\n")
     with open(config["PROB_LOG"], "w") as p_log:
-        p_log.write(
-            "Generation | Population Index | Term Category | Term | Individual\n"
-        )
+        p_log.write("Generation | Population Index | Term Category | Term | Individual\n")
+    with open(config["HISTORY_LOG"], "w") as h_log:
+        h_log.write("Meta-Generation | Population Member | Generation | Heuristic | Fitness\n")
 
     # Get the map & baseline cycle
     rust_map, cycle = get_problems(config["MAP_NAME"])
@@ -60,32 +61,37 @@ def main():
                         log_file.write(f"{gen_num} | {i} | {term_type} | {term} | {prob}\n")
 
         # Evaluate the population
-        heuristic_fitnesses = [
+        results = [
             ga.genetic_algorithm(
                 rust_map, cycle, probs, config["GA_SEED"], config["SECONDS_PER_GA"]
             )
             for probs in population
         ]
 
+        # Write the history of the genetic algorithms to history_log
+        with open(config["HISTORY_LOG"], "a") as file:
+            for pop_i, result in enumerate(results):
+                for gen_i, generation in enumerate(result.history):
+                    for h, f in generation:
+                        file.write(f"{gen_num} | {pop_i} | {gen_i} | \"{h}\" | {f}\n")
+
+
         # Extract the heuristics and fitnesses
-        all_heuristics = tuple(
-            tuple(hf[0] for hf in heuristic_fitness)
-            for heuristic_fitness in heuristic_fitnesses
+        best_heuristics = tuple(
+            tuple(h for h in result.best_heuristics)
+            for result in results
         )
-        all_fitnesses = tuple(
-            tuple(hf[1] for hf in heuristic_fitness)
-            for heuristic_fitness in heuristic_fitnesses
+        best_fitnesses = tuple(
+            tuple(f for f in result.best_fitnesses)
+            for result in results
         )
 
-        # Write all_heuristics and all_fitnesses to log file
-        with open(config["FITNESS_LOG"], "a") as log_file:
-            log_file.write(f"{gen_num} | ")
-            log_file.write(f"{all_heuristics} | ")
-            log_file.write(f"{all_fitnesses}\n")
+        # Write best_heuristics and best_fitnesses to log file
+        with open(config["BEST_LOG"], "a") as log_file:
+            log_file.write(f"{gen_num} | {best_heuristics} | {best_fitnesses}\n")
 
         # Calculate the fitnesses as the mean of the heuristic fitnesses
-        fitnesses = np.mean(all_fitnesses, axis=1)
-
+        fitnesses = np.mean(best_fitnesses, axis=1)
         assert all([f >= 0 for f in fitnesses])
 
         # Crossover the parents probabilistically w.r.t. fitness

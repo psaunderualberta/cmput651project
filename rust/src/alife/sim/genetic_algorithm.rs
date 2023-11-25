@@ -1,3 +1,4 @@
+use pyo3::prelude::*;
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -7,16 +8,27 @@ use std::time::{Duration, Instant};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
 use crate::constants::MAX_TREE_SIZE;
-use crate::heuristic::util::{normalize_vector, random_weighted_sample};
 use crate::heuristic::mutate_probs::TermProbabilities;
 use crate::heuristic::mutator::mutate_heuristic;
 use crate::heuristic::util::random_heuristic;
+use crate::heuristic::util::{normalize_vector, random_weighted_sample};
 use crate::heuristic::Heuristic;
 use crate::map::util::Map;
 
-// 10,000 is WAYYYYY too many. Decreased MAX_POPULATION_SIZE to 100
+// 10,000 is WAYYYYY too many. Decreased MAX_POPULATION_SIZE to 40
 pub const MAX_POPULATION_SIZE: usize = 40;
 pub const MAX_BEST_INDIVIDUALS: usize = 10;
+
+#[derive(Debug, Clone)]
+#[pyclass]
+pub struct GeneticAlgorithmResult {
+    #[pyo3(get)]
+    pub best_heuristics: Vec<String>,
+    #[pyo3(get)]
+    pub best_fitnesses: Vec<f64>,
+    #[pyo3(get)]
+    pub history: Vec<Vec<(String, f64)>>,
+}
 
 #[derive(Debug, Clone)]
 pub struct Individual {
@@ -98,13 +110,15 @@ impl GeneticAlgorithm<'_> {
             h_population: Vec::with_capacity(MAX_POPULATION_SIZE),
             i_population: Vec::with_capacity(MAX_POPULATION_SIZE),
             best_individuals: Vec::with_capacity(MAX_BEST_INDIVIDUALS + 1),
-            term_probs
+            term_probs,
         }
     }
 
-    pub fn run(&mut self) -> Vec<(String, f64)> {
+    pub fn run(&mut self) -> GeneticAlgorithmResult {
+        let mut history = Vec::new();
+
         for _ in 0..self.max_population_size {
-            let h = random_heuristic(MAX_TREE_SIZE, &self.term_probs);
+            let h = random_heuristic(fastrand::i32(1..=MAX_TREE_SIZE), &self.term_probs);
             self.h_population.push(Heuristic::new(h));
         }
 
@@ -114,16 +128,32 @@ impl GeneticAlgorithm<'_> {
 
         let mut generation_number = 0;
         while timer.elapsed() < self.time_limit {
+            // Update the generation number
             generation_number += 1;
 
             // Solve the problem cycle with each heuristic in the population
-            self.i_population = self.h_population
+            self.i_population = self
+                .h_population
                 .iter()
                 .map(|heuristic| self.compute_individual(heuristic.clone()))
                 .collect();
 
+            // Add the current population to the history vector
+            history.push(
+                self.i_population
+                    .iter()
+                    .map(|individual| {
+                        (
+                            individual.heuristic.root().to_string(),
+                            individual.fitness(self.baseline_expansions, self.baseline_path_len),
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            );
+
             // Update the best individuals
-            self.best_individuals.extend(self.i_population.clone().into_iter());
+            self.best_individuals
+                .extend(self.i_population.clone().into_iter());
             self.best_individuals.sort_by(|a, b| {
                 let a_fitness = a.fitness(self.baseline_expansions, self.baseline_path_len);
                 let b_fitness = b.fitness(self.baseline_expansions, self.baseline_path_len);
@@ -135,9 +165,11 @@ impl GeneticAlgorithm<'_> {
             let next_population = self.get_next_population();
             self.h_population = next_population
                 .par_iter()
-                .map(|heuristic| Heuristic::new(mutate_heuristic(heuristic.root(), &self.term_probs)))
+                .map(|heuristic| {
+                    Heuristic::new(mutate_heuristic(heuristic.root(), &self.term_probs))
+                })
                 .collect();
-            
+
             // // Log the best individuals
             // iter_count += 1;
             // if timer.elapsed() > next_log {
@@ -158,21 +190,23 @@ impl GeneticAlgorithm<'_> {
 
         println!("{}", generation_number);
 
-        self.best_individuals
-            .iter()
-            .map(|individual| {
-                (
-                    individual.heuristic.root().to_string(),
-                    individual.fitness(self.baseline_expansions, self.baseline_path_len),
-                )
-            })
-            .collect::<Vec<_>>()
-        
+        GeneticAlgorithmResult {
+            best_heuristics: self
+                .best_individuals
+                .iter()
+                .map(|i| i.heuristic.root().to_string())
+                .collect(),
+            best_fitnesses: self
+                .best_individuals
+                .iter()
+                .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
+                .collect(),
+            history,
+        }
     }
 
     fn compute_individual(&self, heuristic: Heuristic) -> Individual {
-        let mut cycle =
-            CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone());
+        let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone());
         cycle.solve_cycle();
         Individual {
             heuristic,
@@ -182,7 +216,7 @@ impl GeneticAlgorithm<'_> {
     }
 
     fn get_next_population(&self) -> Vec<Heuristic> {
-        let mut selected= Vec::with_capacity(MAX_POPULATION_SIZE);
+        let mut selected = Vec::with_capacity(MAX_POPULATION_SIZE);
 
         // Get the fitnesses in the current population
         let mut weights = self
@@ -194,7 +228,8 @@ impl GeneticAlgorithm<'_> {
         // Normalize the weights and select n random individuals according to the weights
         normalize_vector(&mut weights);
         while selected.len() < MAX_POPULATION_SIZE {
-            selected.push(random_weighted_sample::<Heuristic>(&weights, &self.h_population).clone());
+            selected
+                .push(random_weighted_sample::<Heuristic>(&weights, &self.h_population).clone());
         }
 
         // return the selected individuals
@@ -247,30 +282,30 @@ impl GeneticAlgorithm<'_> {
     // }
 }
 
-        // while timer.elapsed() < self.time_limit {
-        //     let h = random_heuristic(fastrand::i32(1..=7));
-        //     let individual = self.add_individual(Heuristic { root: h });
-        //     iter_count += 1;
-        //     if timer.elapsed() > next_log {
-        //         println!("\n### Best Heuristics ###\n");
-        //         for individual in self.best_individuals.iter() {
-        //             println!(
-        //                 "Heuristic {:2.2}% expansions of baseline: {}",
-        //                 100.0 * individual.result as f64 / self.baseline_expansions as f64,
-        //                 individual.heuristic.root
-        //             );
-        //         }
-        //         println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
-        //         iter_count = 0;
-        //         next_log = timer.elapsed() + Duration::from_secs(10);
-        //     }
-        // }
+// while timer.elapsed() < self.time_limit {
+//     let h = random_heuristic(fastrand::i32(1..=7));
+//     let individual = self.add_individual(Heuristic { root: h });
+//     iter_count += 1;
+//     if timer.elapsed() > next_log {
+//         println!("\n### Best Heuristics ###\n");
+//         for individual in self.best_individuals.iter() {
+//             println!(
+//                 "Heuristic {:2.2}% expansions of baseline: {}",
+//                 100.0 * individual.result as f64 / self.baseline_expansions as f64,
+//                 individual.heuristic.root
+//             );
+//         }
+//         println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
+//         iter_count = 0;
+//         next_log = timer.elapsed() + Duration::from_secs(10);
+//     }
+// }
 
-        // println!("\n### Best Heuristics ###\n");
-        // for individual in self.best_individuals.iter() {
-        //     println!(
-        //         "Heuristic {:2.2}% expansions of baseline: {}",
-        //         100.0 * individual.result as f64 / self.baseline_expansions as f64,
-        //         individual.heuristic.root
-        //     );
-        // }
+// println!("\n### Best Heuristics ###\n");
+// for individual in self.best_individuals.iter() {
+//     println!(
+//         "Heuristic {:2.2}% expansions of baseline: {}",
+//         100.0 * individual.result as f64 / self.baseline_expansions as f64,
+//         individual.heuristic.root
+//     );
+// }
