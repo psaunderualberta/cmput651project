@@ -44,7 +44,9 @@ RUN apt-get update && apt-get upgrade -q -y && \
     python3-venv \
     python3-numpy \
     python3-pandas \
+    python3-ipykernel \
     libpython3-dev \
+    jupyter \
     && rm -rf /var/lib/apt/lists/* && apt-get clean
 
 # setup locale
