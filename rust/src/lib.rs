@@ -45,6 +45,7 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     ga_module.add_function(wrap_pyfunction!(random_term_probabilities, m)?)?;
     ga_module.add_function(wrap_pyfunction!(crossover_probabilities, m)?)?;
     ga_module.add_function(wrap_pyfunction!(mutate_probabilities, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(term_probabilities_from_dict, m)?)?;
     ga_module.add_function(wrap_pyfunction!(probabilities2dict, m)?)?;
     m.add_submodule(ga_module)?;
 
@@ -206,6 +207,11 @@ fn mutate_probabilities(probs: TermProbabilities, mut_prob: f64) -> PyResult<Ter
 #[pyfunction]
 fn random_term_probabilities(uniform: bool) -> PyResult<TermProbabilities> {
     Ok(TermProbabilities::new(uniform))
+}
+
+#[pyfunction]
+fn term_probabilities_from_dict(dict: HashMap<String, Vec<f64>>) -> PyResult<TermProbabilities> {
+    Ok(TermProbabilities::from_hashmap(dict))
 }
 
 #[pyfunction]

@@ -78,6 +78,7 @@ impl CycleSolver {
         let raw = executor.get_raw().clone();
         self.results
             .par_iter_mut()
+            // .iter_mut()
             .enumerate()
             .for_each(|(idx, result)| {
                 if result.is_none() {

@@ -301,8 +301,8 @@ impl GeneticAlgorithm {
 impl GeneticAlgorithm {
     pub fn initialize_ga(&mut self) {
         let mut h_population: Vec<Heuristic> = Vec::with_capacity(1000);
-        for _ in 0..1000 {
-            let h = random_heuristic(MAX_TREE_SIZE, &self.term_probs);
+        for _ in 0..900 {
+            let h = random_heuristic(fastrand::i32(1..=7), &self.term_probs);
             h_population.push(Heuristic::new(h));
         }
         self.best_individuals = h_population
@@ -319,16 +319,34 @@ impl GeneticAlgorithm {
 
         let mut prob_performance: Vec<f64> = vec![0.0; probs.len()];
 
-        let rounds = 5;
-        let mutations_per_prob = 10;
+        let rounds = 1;
+        let mutations_per_prob = 100;
 
         for _ in 0..rounds {
             // Get the fitnesses in the current population
             let mut weights = self
                 .best_individuals
                 .iter()
-                .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
+                .map(|i| 1.0 / i.fitness(self.baseline_expansions, self.baseline_path_len))
                 .collect::<Vec<_>>();
+
+            // add 100 random individuals
+            self.best_individuals.extend(
+                (0..100)
+                    // .into_par_iter()
+                    .map(|_| {
+                        let h = random_heuristic(fastrand::i32(1..=10), &self.term_probs);
+                        self.compute_individual(Heuristic::new(h))
+                    })
+                    .collect::<Vec<_>>(),
+            );
+
+            // get average weight
+            let avg_weight = weights.iter().sum::<f64>() / weights.len() as f64;
+            // add 100 average weights
+            for _ in 0..100 {
+                weights.push(avg_weight);
+            }
 
             // Normalize the weights and select n random individuals according to the weights
             normalize_vector(&mut weights);
@@ -339,6 +357,7 @@ impl GeneticAlgorithm {
 
             let before = (&next_population)
                 .iter()
+                // .map(|i| self.baseline_expansions as f64 / i.expansions as f64)
                 .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
                 .collect::<Vec<_>>();
 
@@ -356,6 +375,7 @@ impl GeneticAlgorithm {
             let h_population: Vec<Heuristic> = next_population
                 .into_iter()
                 .zip(0..)
+                // .par_bridge()
                 .map(|(individual, i)| {
                     Heuristic::new(mutate_heuristic(
                         individual.heuristic.root(),
@@ -366,49 +386,64 @@ impl GeneticAlgorithm {
 
             // Solve the problem cycle with each heuristic in the population
             let i_population: Vec<Individual> = h_population
-                .par_iter()
+                .iter()
+                // .par_iter()
                 .map(|heuristic| self.compute_individual(heuristic.clone()))
                 .collect();
 
             let after = (&i_population)
                 .iter()
+                // .map(|i| self.baseline_expansions as f64 / i.expansions as f64)
                 .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
                 .collect::<Vec<_>>();
 
             for p in 0..probs.len() {
                 for i in 0..mutations_per_prob {
-                    prob_performance[p] += (after[p * mutations_per_prob + i]
-                        - before[p * mutations_per_prob + i])
+                    // prob_performance[p] += (after[p * mutations_per_prob + i]
+                    //     - before[p * mutations_per_prob + i])
+                    //     .max(0.0);
+                    // * after[p * mutations_per_prob + i];
+
+                    prob_performance[p] += (before[p * mutations_per_prob + i]
+                        - after[p * mutations_per_prob + i])
                         .max(0.0)
-                        .powi(2);
+                        / after[p * mutations_per_prob + i];
+
+                    // prob_performance[p] += after[p * mutations_per_prob + i];
                 }
             }
 
             // Update the best individuals
             self.best_individuals
                 .extend(i_population.clone().into_iter());
+
+            // remove duplicates
+            let mut set = HashSet::new();
+            self.best_individuals
+                .retain(|individual| set.insert(individual.clone()));
+
             self.best_individuals.sort_by(|a, b| {
                 let a_fitness = a.fitness(self.baseline_expansions, self.baseline_path_len);
                 let b_fitness = b.fitness(self.baseline_expansions, self.baseline_path_len);
-                b_fitness.partial_cmp(&a_fitness).unwrap_or(Ordering::Equal)
+                a_fitness.partial_cmp(&b_fitness).unwrap_or(Ordering::Equal)
             });
-            self.best_individuals.truncate(1000);
+            self.best_individuals.truncate(900);
 
-            // // Log the best individuals
+            // Log the best individuals
             // iter_count += 1;
             // if timer.elapsed() > next_log {
-            //     println!("\n### Best Heuristics ###\n");
-            //     for individual in self.best_individuals.iter() {
-            //         println!(
-            //             "Heuristic {:2.2}% expansions of baseline, {:2.2}% path len of baseline: {}",
-            //             100.0 * individual.expansions as f64 / self.baseline_expansions as f64,
-            //             100.0 * individual.path_len as f64 / self.baseline_path_len as f64,
-            //             individual.heuristic.root()
-            //         );
-            //     }
-            //     println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
-            //     iter_count = 0;
-            //     next_log = timer.elapsed() + Duration::from_secs(mutations_per_prob);
+            println!("\n### Best Heuristics ###\n");
+            for individual in self.best_individuals.iter().take(5) {
+                println!(
+                    "Heuristic {:2.2}% expansions of baseline, {:2.2}% path len of baseline: {}",
+                    100.0 * individual.expansions as f64 / self.baseline_expansions as f64,
+                    100.0 * individual.path_len as f64 / self.baseline_path_len as f64,
+                    individual.heuristic.root()
+                );
+            }
+            // println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
+            // iter_count = 0;
+            // next_log = timer.elapsed() + Duration::from_secs(mutations_per_prob);
             // }
         }
 

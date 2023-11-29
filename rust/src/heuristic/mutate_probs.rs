@@ -83,6 +83,16 @@ impl TermProbabilities {
 
         for (key, value) in hashmap {
             match key.as_str() {
+                "binaries" => assert!(value.len() == 6, "Invalid binaries vector length"),
+                "unaries" => assert!(value.len() == 4, "Invalid unaries vector length"),
+                "terminals" => assert!(value.len() == 6, "Invalid terminals vector length"),
+                "numbers" => assert!(value.len() == 9, "Invalid numbers vector length"),
+                _ => {
+                    unreachable!("Invalid key '{}' in hashmap", key);
+                }
+            }
+
+            match key.as_str() {
                 "binaries" => result.binaries = value,
                 "unaries" => result.unaries = value,
                 "terminals" => result.terminals = value,
