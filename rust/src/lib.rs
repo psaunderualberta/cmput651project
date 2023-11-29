@@ -10,7 +10,7 @@ use alife::search::cycle::{CycleSolver, ProblemCycle};
 use alife::sim::genetic_algorithm::{GeneticAlgorithm, GeneticAlgorithmResult};
 use alife::sim::simulator::{Simulation, SimulationResult};
 use constants::PROBLEM_CYCLE_LENGTH;
-use heuristic::mutate_probs::{TermProbabilities, Term};
+use heuristic::mutate_probs::{Term, TermProbabilities};
 use pyo3::prelude::*;
 use pyo3::{pymodule, types::PyModule, Python};
 
@@ -18,7 +18,7 @@ use alife::search::problem::{Problem, ProblemResult};
 use heuristic::parser::parse_heuristic;
 use heuristic::Heuristic;
 use map::parser::parse_map_file;
-use map::util::{Maps, Map};
+use map::util::{Map, Maps};
 
 use crate::heuristic::executors::interpreter::Interpreter;
 use crate::heuristic::executors::HeuristicExecuter;
@@ -29,21 +29,23 @@ fn libcmput651py<'py>(py: Python<'py>, m: &'py PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(test_heuristic, m)?)?;
     m.add_function(wrap_pyfunction!(solve_cycle_on_map, m)?)?;
     m.add_function(wrap_pyfunction!(get_problems, m)?)?;
-    
+
     let heuristic_module = PyModule::new(py, "heuristic")?;
     heuristic_module.add_function(wrap_pyfunction!(manhattan_distance, m)?)?;
     m.add_submodule(heuristic_module)?;
-    
+
     // Alife module
     let alife_module = PyModule::new(py, "alife")?;
     alife_module.add_function(wrap_pyfunction!(simulation, m)?)?;
     m.add_submodule(alife_module)?;
-    
+
     let ga_module = PyModule::new(py, "genetic_algorithm")?;
     ga_module.add_function(wrap_pyfunction!(genetic_algorithm, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(get_genetic_algorithm, m)?)?;
     ga_module.add_function(wrap_pyfunction!(random_term_probabilities, m)?)?;
     ga_module.add_function(wrap_pyfunction!(crossover_probabilities, m)?)?;
     ga_module.add_function(wrap_pyfunction!(mutate_probabilities, m)?)?;
+    ga_module.add_function(wrap_pyfunction!(term_probabilities_from_dict, m)?)?;
     ga_module.add_function(wrap_pyfunction!(probabilities2dict, m)?)?;
     m.add_submodule(ga_module)?;
 
@@ -67,9 +69,9 @@ fn get_problems(map_name: String) -> PyResult<(Map, ProblemCycle)> {
     let map_path = Maps::name2path(map_name.as_str());
     let map = parse_map_file(map_path);
 
-    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let cycle = ProblemCycle::new(map.clone(), PROBLEM_CYCLE_LENGTH);
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
-    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), map.clone(), manhattan);
     baseline.solve_cycle();
 
     Ok((map, cycle))
@@ -104,7 +106,7 @@ fn solve_cycle_on_map(map_name: String, h: &Heuristic) -> PyResult<Vec<ProblemRe
     let map_path = Maps::name2path(map_name.as_str());
     let map = parse_map_file(map_path);
 
-    Ok(CycleSolver::new(&map, h.clone(), PROBLEM_CYCLE_LENGTH).solve_cycle())
+    Ok(CycleSolver::new(map, h.clone(), PROBLEM_CYCLE_LENGTH).solve_cycle())
 }
 
 #[pyfunction]
@@ -112,17 +114,17 @@ fn simulation(map_name: String, seed: u64, secs: u64) -> PyResult<SimulationResu
     let map_path = Maps::name2path(map_name.as_str());
     let map = parse_map_file(map_path);
 
-    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let cycle = ProblemCycle::new(map.clone(), PROBLEM_CYCLE_LENGTH);
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
-    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), map.clone(), manhattan);
     baseline.solve_cycle();
     let expansion_limit = baseline.get_total_expansions_in_cycle() * 5;
     let time_limit = Duration::from_secs(secs);
 
     let mut sim = Simulation::new(
-        &map,
+        map,
         cycle,
-        &baseline,
+        baseline,
         expansion_limit,
         time_limit,
         Some(seed),
@@ -138,18 +140,24 @@ fn manhattan_distance() -> PyResult<Heuristic> {
 }
 
 #[pyfunction]
-fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u64, secs: u64) -> PyResult<GeneticAlgorithmResult> {
+fn genetic_algorithm(
+    m: Map,
+    c: ProblemCycle,
+    probs: TermProbabilities,
+    seed: u64,
+    secs: u64,
+) -> PyResult<GeneticAlgorithmResult> {
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
-    let mut baseline = CycleSolver::from_cycle(c.clone(), &m, manhattan);
+    let mut baseline = CycleSolver::from_cycle(c.clone(), m.clone(), manhattan);
     baseline.solve_cycle();
 
     let time_limit = Duration::from_secs(secs);
     let expansion_limit: usize = baseline.get_total_expansions_in_cycle() * 5;
 
     let mut sim = GeneticAlgorithm::new(
-        &m,
+        m,
         c,
-        &baseline,
+        baseline,
         expansion_limit,
         time_limit,
         Some(probs),
@@ -161,7 +169,33 @@ fn genetic_algorithm(m: Map, c: ProblemCycle, probs: TermProbabilities, seed: u6
 }
 
 #[pyfunction]
-fn crossover_probabilities(probs1: TermProbabilities, probs2: TermProbabilities) -> PyResult<TermProbabilities> {
+fn get_genetic_algorithm() -> GeneticAlgorithm {
+    let map = parse_map_file(Maps::Den312d.path());
+    let seed = Some(42);
+
+    let cycle = ProblemCycle::new(map.clone(), PROBLEM_CYCLE_LENGTH);
+    let manhattan = parse_heuristic("(+ deltaX deltaY)");
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), map.clone(), manhattan);
+    baseline.solve_cycle();
+    let expansion_limit: usize = baseline.get_total_expansions_in_cycle() * 5;
+
+    GeneticAlgorithm::new(
+        map,
+        cycle,
+        baseline,
+        expansion_limit,
+        Duration::from_secs(10),
+        None,
+        seed,
+        true,
+    )
+}
+
+#[pyfunction]
+fn crossover_probabilities(
+    probs1: TermProbabilities,
+    probs2: TermProbabilities,
+) -> PyResult<TermProbabilities> {
     Ok(probs1.crossover(&probs2))
 }
 
@@ -172,7 +206,12 @@ fn mutate_probabilities(probs: TermProbabilities, mut_prob: f64) -> PyResult<Ter
 
 #[pyfunction]
 fn random_term_probabilities(uniform: bool) -> PyResult<TermProbabilities> {
-    Ok(TermProbabilities::new(uniform))   
+    Ok(TermProbabilities::new(uniform))
+}
+
+#[pyfunction]
+fn term_probabilities_from_dict(dict: HashMap<String, Vec<f64>>) -> PyResult<TermProbabilities> {
+    Ok(TermProbabilities::from_hashmap(dict))
 }
 
 #[pyfunction]

@@ -14,13 +14,13 @@ use crate::map::util::Map;
 
 use super::expansion_tracker::ExpansionTracker;
 
-pub struct Simulation<'a> {
+pub struct Simulation {
     // The map used to perform the search
-    pub map: &'a Map,
+    pub map: Map,
     // The problem cycle on which all heuristics will be evaluated
     pub cycle: ProblemCycle,
     // The results of solving the problem cycle with manhattan distance
-    pub baseline: &'a CycleSolver<'a>,
+    pub baseline: CycleSolver,
     // The maximum number of expansions allowed per heuristic
     pub expansion_bound: usize,
     // The maximum amount of time allowed for the simulation
@@ -43,16 +43,16 @@ pub struct SimulationResult {
     pub best: HeuristicResult,
 }
 
-impl Simulation<'_> {
-    pub fn new<'a>(
-        map: &'a Map,
+impl Simulation {
+    pub fn new(
+        map: Map,
         cycle: ProblemCycle,
-        baseline: &'a CycleSolver,
+        baseline: CycleSolver,
         expansion_bound: usize,
         time_limit: Duration,
         seed: Option<u64>,
         verbose: bool,
-    ) -> Simulation<'a> {
+    ) -> Simulation {
         // Seed the random number generator if a seed was provided
 
         let sim = Simulation {
@@ -92,7 +92,8 @@ impl Simulation<'_> {
                 println!("Seeding heuristic #{}", i);
             }
             let h = Heuristic::new(random_heuristic(-1, &None));
-            let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, h.clone());
+            let mut cycle =
+                CycleSolver::from_cycle(self.cycle.clone(), self.map.clone(), h.clone());
 
             let results = cycle.solve_cycle();
             let tracker = ExpansionTracker::new(results, self.expansion_bound, h.clone());
@@ -136,9 +137,12 @@ impl Simulation<'_> {
             if tracker.consume_mutation() {
                 let new_h = mutate_heuristic(&tracker.get_heuristic().root, &None);
                 let heuristic = Heuristic::new(new_h);
-                let results =
-                    CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone())
-                        .solve_cycle();
+                let results = CycleSolver::from_cycle(
+                    self.cycle.clone(),
+                    self.map.clone(),
+                    heuristic.clone(),
+                )
+                .solve_cycle();
                 let new_tracker = ExpansionTracker::new(results, self.expansion_bound, heuristic);
 
                 // Get heuristic result, update best if necessary

@@ -92,7 +92,7 @@ fn benchmark() {
 
     // Create problems
     let num_problems = PROBLEM_CYCLE_LENGTH;
-    let mut astarcycle = CycleSolver::new(&map, h, num_problems);
+    let mut astarcycle = CycleSolver::new(map, h, num_problems);
 
     // Perform first solve
     let now = Instant::now();
@@ -124,23 +124,23 @@ fn benchmark_executers() {
 fn alife_demo() {
     let map = parse_map_file(Maps::Den312d.path());
 
-    alife::alife(&map, Duration::from_secs(10));
+    alife::alife(map, Duration::from_secs(10));
 }
 
 fn ga_demo() {
     let map = parse_map_file(Maps::Den312d.path());
     let seed = Some(42);
 
-    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let cycle = ProblemCycle::new(map.clone(), PROBLEM_CYCLE_LENGTH);
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
-    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), map.clone(), manhattan);
     baseline.solve_cycle();
     let expansion_limit: usize = baseline.get_total_expansions_in_cycle() * 5;
 
     let mut sim = GeneticAlgorithm::new(
-        &map,
+        map,
         cycle,
-        &baseline,
+        baseline,
         expansion_limit,
         Duration::from_secs(10),
         None,
@@ -155,9 +155,9 @@ fn eval_heursitic() {
     let map = parse_map_file(Maps::Den312d.path());
     let seed = Some(42);
 
-    let cycle = ProblemCycle::new(&map, PROBLEM_CYCLE_LENGTH);
+    let cycle = ProblemCycle::new(map.clone(), PROBLEM_CYCLE_LENGTH);
     let manhattan = parse_heuristic("(+ deltaX deltaY)");
-    let mut baseline = CycleSolver::from_cycle(cycle.clone(), &map, manhattan);
+    let mut baseline = CycleSolver::from_cycle(cycle.clone(), map.clone(), manhattan);
     baseline.solve_cycle();
 
     let heuristic = parse_heuristic(
@@ -168,7 +168,7 @@ fn eval_heursitic() {
         // "(max deltaX deltaY)",
         // "(* deltaX 1)",
     );
-    let mut individual = CycleSolver::from_cycle(cycle.clone(), &map, heuristic.clone());
+    let mut individual = CycleSolver::from_cycle(cycle.clone(), map.clone(), heuristic.clone());
     individual.solve_cycle();
 
     println!(

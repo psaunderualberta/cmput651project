@@ -1,4 +1,4 @@
-use pyo3::prelude::*;
+use pyo3::{pyclass, pymethods};
 use rayon::prelude::*;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
@@ -61,13 +61,14 @@ impl Individual {
     }
 }
 
-pub struct GeneticAlgorithm<'a> {
+#[pyclass]
+pub struct GeneticAlgorithm {
     // The map used to perform the search
-    pub map: &'a Map,
+    pub map: Map,
     // The problem cycle on which all heuristics will be evaluated
     pub cycle: ProblemCycle,
     // The results of solving the problem cycle with manhattan distance
-    pub baseline: &'a CycleSolver<'a>,
+    pub baseline: CycleSolver,
     pub baseline_expansions: usize,
     pub baseline_path_len: usize,
     // The maximum number of expansions allowed per heuristic
@@ -82,17 +83,17 @@ pub struct GeneticAlgorithm<'a> {
     pub term_probs: Option<TermProbabilities>,
 }
 
-impl GeneticAlgorithm<'_> {
-    pub fn new<'a>(
-        map: &'a Map,
+impl GeneticAlgorithm {
+    pub fn new(
+        map: Map,
         cycle: ProblemCycle,
-        baseline: &'a CycleSolver,
+        baseline: CycleSolver,
         expansion_bound: usize,
         time_limit: Duration,
         term_probs: Option<TermProbabilities>,
         seed: Option<u64>,
         _verbose: bool,
-    ) -> GeneticAlgorithm<'a> {
+    ) -> GeneticAlgorithm {
         // Seed the random number generator if a seed was provided
         if seed.is_some() {
             fastrand::seed(seed.unwrap());
@@ -101,7 +102,7 @@ impl GeneticAlgorithm<'_> {
         GeneticAlgorithm {
             map,
             cycle,
-            baseline,
+            baseline: baseline.clone(),
             baseline_expansions: baseline.get_total_expansions_in_cycle(),
             baseline_path_len: baseline.get_total_path_length_in_cycle(),
             expansion_bound,
@@ -206,7 +207,8 @@ impl GeneticAlgorithm<'_> {
     }
 
     fn compute_individual(&self, heuristic: Heuristic) -> Individual {
-        let mut cycle = CycleSolver::from_cycle(self.cycle.clone(), self.map, heuristic.clone());
+        let mut cycle =
+            CycleSolver::from_cycle(self.cycle.clone(), self.map.clone(), heuristic.clone());
         cycle.solve_cycle();
         Individual {
             heuristic,
@@ -236,6 +238,19 @@ impl GeneticAlgorithm<'_> {
         selected
     }
 
+    fn select_n_individuals(&self, n: usize, weights: &Vec<f64>) -> Vec<Individual> {
+        let mut selected = Vec::with_capacity(n);
+
+        while selected.len() < n {
+            selected.push(
+                random_weighted_sample::<Individual>(weights, &self.best_individuals).clone(),
+            );
+        }
+
+        // return the selected individuals
+        selected
+    }
+
     // fn add_individual(&mut self, heuristic: Heuristic) -> Individual {
     //     // insert only if population does not already contain individual
     //     let mut individual = Individual {
@@ -259,7 +274,7 @@ impl GeneticAlgorithm<'_> {
     //                     None => usize::MAX,
     //                 }
     //             {
-    //                 self.best_individuals.insert(i, individual.clone());
+    //                 self.best_individuals.insert(i, indual.clone());
     //                 break;
     //             }
     //         }
@@ -272,7 +287,7 @@ impl GeneticAlgorithm<'_> {
     //                 for individual in self.population.iter() {
     //                     if individual.expansions > worst.expansions {
     //                         worst = individual;
-    //                     }
+    //                     }divi
     //                 }
     //                 self.population.remove(&worst.clone());
     //             }
@@ -280,6 +295,179 @@ impl GeneticAlgorithm<'_> {
     //         individual
     //     }
     // }
+}
+
+#[pymethods]
+impl GeneticAlgorithm {
+    pub fn initialize_ga(&mut self) {
+        let mut h_population: Vec<Heuristic> = Vec::with_capacity(1000);
+        for _ in 0..900 {
+            let h = random_heuristic(fastrand::i32(1..=7), &self.term_probs);
+            h_population.push(Heuristic::new(h));
+        }
+        self.best_individuals = h_population
+            .par_iter()
+            .map(|heuristic| self.compute_individual(heuristic.clone()))
+            .collect();
+    }
+
+    pub fn step_with_probs(
+        &mut self,
+        probs: Vec<TermProbabilities>,
+    ) -> (Vec<(String, f64)>, Vec<f64>) {
+        let timer = Instant::now();
+
+        let mut prob_performance: Vec<f64> = vec![0.0; probs.len()];
+
+        let rounds = 1;
+        let mutations_per_prob = 100;
+
+        for _ in 0..rounds {
+            // Get the fitnesses in the current population
+            let mut weights = self
+                .best_individuals
+                .iter()
+                .map(|i| 1.0 / i.fitness(self.baseline_expansions, self.baseline_path_len))
+                .collect::<Vec<_>>();
+
+            // add 100 random individuals
+            self.best_individuals.extend(
+                (0..100)
+                    // .into_par_iter()
+                    .map(|_| {
+                        let h = random_heuristic(fastrand::i32(1..=10), &self.term_probs);
+                        self.compute_individual(Heuristic::new(h))
+                    })
+                    .collect::<Vec<_>>(),
+            );
+
+            // get average weight
+            let avg_weight = weights.iter().sum::<f64>() / weights.len() as f64;
+            // add 100 average weights
+            for _ in 0..100 {
+                weights.push(avg_weight);
+            }
+
+            // Normalize the weights and select n random individuals according to the weights
+            normalize_vector(&mut weights);
+
+            // Get the individuals in the next population
+            let next_population =
+                self.select_n_individuals(probs.len() * mutations_per_prob, &weights);
+
+            let before = (&next_population)
+                .iter()
+                // .map(|i| self.baseline_expansions as f64 / i.expansions as f64)
+                .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
+                .collect::<Vec<_>>();
+
+            // let h_population: Vec<Heuristic> = Vec::with_capacity(probs.len() * 10);
+
+            // for p in 0..probs.len() {
+            //     for i in 0..10 {
+            //         let mut h = next_population.get(p * 10 + i).unwrap().heuristic.clone();
+            //         h.mutate(&probs[p]);
+            //         h_population.push(h);
+            //     }
+            // }
+
+            // map with index
+            let h_population: Vec<Heuristic> = next_population
+                .into_iter()
+                .zip(0..)
+                // .par_bridge()
+                .map(|(individual, i)| {
+                    Heuristic::new(mutate_heuristic(
+                        individual.heuristic.root(),
+                        &Some(probs[i / mutations_per_prob].clone()),
+                    ))
+                })
+                .collect();
+
+            // Solve the problem cycle with each heuristic in the population
+            let i_population: Vec<Individual> = h_population
+                .iter()
+                // .par_iter()
+                .map(|heuristic| self.compute_individual(heuristic.clone()))
+                .collect();
+
+            let after = (&i_population)
+                .iter()
+                // .map(|i| self.baseline_expansions as f64 / i.expansions as f64)
+                .map(|i| i.fitness(self.baseline_expansions, self.baseline_path_len))
+                .collect::<Vec<_>>();
+
+            for p in 0..probs.len() {
+                for i in 0..mutations_per_prob {
+                    // prob_performance[p] += (after[p * mutations_per_prob + i]
+                    //     - before[p * mutations_per_prob + i])
+                    //     .max(0.0);
+                    // * after[p * mutations_per_prob + i];
+
+                    prob_performance[p] += (before[p * mutations_per_prob + i]
+                        - after[p * mutations_per_prob + i])
+                        .max(0.0)
+                        / after[p * mutations_per_prob + i];
+
+                    // prob_performance[p] += after[p * mutations_per_prob + i];
+                }
+            }
+
+            // Update the best individuals
+            self.best_individuals
+                .extend(i_population.clone().into_iter());
+
+            // remove duplicates
+            let mut set = HashSet::new();
+            self.best_individuals
+                .retain(|individual| set.insert(individual.clone()));
+
+            self.best_individuals.sort_by(|a, b| {
+                let a_fitness = a.fitness(self.baseline_expansions, self.baseline_path_len);
+                let b_fitness = b.fitness(self.baseline_expansions, self.baseline_path_len);
+                a_fitness.partial_cmp(&b_fitness).unwrap_or(Ordering::Equal)
+            });
+            self.best_individuals.truncate(900);
+
+            // Log the best individuals
+            // iter_count += 1;
+            // if timer.elapsed() > next_log {
+            println!("\n### Best Heuristics ###\n");
+            for individual in self.best_individuals.iter().take(5) {
+                println!(
+                    "Heuristic {:2.2}% expansions of baseline, {:2.2}% path len of baseline: {}",
+                    100.0 * individual.expansions as f64 / self.baseline_expansions as f64,
+                    100.0 * individual.path_len as f64 / self.baseline_path_len as f64,
+                    individual.heuristic.root()
+                );
+            }
+            // println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
+            // iter_count = 0;
+            // next_log = timer.elapsed() + Duration::from_secs(mutations_per_prob);
+            // }
+        }
+
+        // divide prob_performance by 5 * 10
+        for p in 0..probs.len() {
+            prob_performance[p] /= (rounds * mutations_per_prob) as f64;
+        }
+
+        (
+            self.best_individuals
+                .iter()
+                .take(10)
+                .map(|individual| {
+                    (
+                        individual.heuristic.root().to_string(),
+                        individual.fitness(self.baseline_expansions, self.baseline_path_len),
+                    )
+                })
+                .collect::<Vec<_>>(),
+            prob_performance,
+        )
+
+        // prob_performance
+    }
 }
 
 // while timer.elapsed() < self.time_limit {

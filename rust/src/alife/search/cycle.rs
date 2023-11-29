@@ -3,8 +3,8 @@ use crate::{
     heuristic::{executors::jit::Jit, Heuristic},
     map::util::Map,
 };
-use rayon::prelude::*;
 use pyo3::pyclass;
+use rayon::prelude::*;
 
 #[derive(Clone)]
 #[pyclass]
@@ -13,7 +13,7 @@ pub struct ProblemCycle {
 }
 
 impl ProblemCycle {
-    pub fn new(map: &Map, num_problems: usize) -> ProblemCycle {
+    pub fn new(map: Map, num_problems: usize) -> ProblemCycle {
         let mut problems = Vec::new();
         let original_start = map.random_free_position();
         let mut start = original_start;
@@ -47,25 +47,21 @@ impl ProblemCycle {
     }
 }
 
-// #[derive(Clone)]
-pub struct CycleSolver<'a> {
-    map: &'a Map,
+#[derive(Clone)]
+pub struct CycleSolver {
+    map: Map,
     heuristic: Heuristic,
     results: Vec<Option<ProblemResult>>,
     problems: ProblemCycle,
 }
 
-impl CycleSolver<'_> {
-    pub fn new<'a>(map: &'a Map, heuristic: Heuristic, num_problems: usize) -> CycleSolver<'a> {
-        let pcycle = ProblemCycle::new(map, num_problems);
+impl CycleSolver {
+    pub fn new(map: Map, heuristic: Heuristic, num_problems: usize) -> CycleSolver {
+        let pcycle = ProblemCycle::new(map.clone(), num_problems);
         Self::from_cycle(pcycle, map, heuristic)
     }
 
-    pub fn from_cycle<'a>(
-        problems: ProblemCycle,
-        map: &'a Map,
-        heuristic: Heuristic,
-    ) -> CycleSolver<'a> {
+    pub fn from_cycle(problems: ProblemCycle, map: Map, heuristic: Heuristic) -> CycleSolver {
         CycleSolver {
             map,
             heuristic,
@@ -82,12 +78,13 @@ impl CycleSolver<'_> {
         let raw = executor.get_raw().clone();
         self.results
             .par_iter_mut()
+            // .iter_mut()
             .enumerate()
             .for_each(|(idx, result)| {
                 if result.is_none() {
                     let problem = self.problems.get(idx);
                     *result = Some(
-                        problem.solve(self.map, |sx, sy, gx, gy| unsafe { raw(sx, sy, gx, gy) }),
+                        problem.solve(&self.map, |sx, sy, gx, gy| unsafe { raw(sx, sy, gx, gy) }),
                     );
                 }
             });
