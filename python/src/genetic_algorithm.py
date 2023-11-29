@@ -3,7 +3,17 @@ from libcmput651py import get_problems
 import random
 import numpy as np
 import time
+import sys
+import os
 
+def check_fname_prefix_existence(fname):
+    dirpath = os.path.join(os.path.dirname(__file__), "..", "out")
+    for f in os.listdir(dirpath):
+        files = [f"{fname}-{i}.csv" for i in ["data", "log", "history"]]
+        if f in files:
+            return True
+    
+    return False
 
 def get_individuals(population):
     return [ga.probabilities2dict(p) for p in population]
@@ -12,16 +22,19 @@ def get_individuals(population):
 def main():
     start_time = time.time()
 
+    prefix = '-'.join(sys.argv[1:])
+    assert not check_fname_prefix_existence(prefix), f"Prefix {prefix} already exists"
+
     config = {
-        "MAP_NAME": "maze2",
-        "POPULATION_SIZE": 12,
+        "MAP_NAME": "hrt201d",
+        "POPULATION_SIZE": 10,
         "SECONDS_PER_GA": 60 * 60,
         "GA_SEED": 42,
         "MUTATION_PROBABILITY": 0.1,
         "DEBUG": False,
-        "BEST_LOG": f"../python/out/{int(start_time)}-data.csv",
-        "PROB_LOG": f"../python/out/{int(start_time)}-log.csv",
-        "HISTORY_LOG": f"../python/out/{int(start_time)}-history.csv",
+        "BEST_LOG": f"../python/out/{prefix}-data.csv",
+        "PROB_LOG": f"../python/out/{prefix}-log.csv",
+        "HISTORY_LOG": f"../python/out/{prefix}-history.csv",
         "TIMEOUT": 1,
     }
 
@@ -92,6 +105,7 @@ def main():
 
         # Calculate the fitnesses as the mean of the heuristic fitnesses
         fitnesses = np.mean(best_fitnesses, axis=1)
+        fitnesses = np.max(fitnesses) + np.min(fitnesses) - fitnesses
         assert all([f >= 0 for f in fitnesses])
 
         # Crossover the parents probabilistically w.r.t. fitness

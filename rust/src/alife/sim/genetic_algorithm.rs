@@ -157,7 +157,7 @@ impl GeneticAlgorithm<'_> {
             self.best_individuals.sort_by(|a, b| {
                 let a_fitness = a.fitness(self.baseline_expansions, self.baseline_path_len);
                 let b_fitness = b.fitness(self.baseline_expansions, self.baseline_path_len);
-                b_fitness.partial_cmp(&a_fitness).unwrap_or(Ordering::Equal)
+                a_fitness.partial_cmp(&b_fitness).unwrap_or(Ordering::Equal)
             });
             self.best_individuals.truncate(MAX_BEST_INDIVIDUALS);
 

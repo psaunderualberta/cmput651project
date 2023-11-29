@@ -35,15 +35,15 @@ def plot_champions(fitness_log, out_path):
     std_fitnesses = np.std(fitnesses, axis=2)
 
     # Get the champion fitnesses
-    best_fitnesses = np.max(avg_fitnesses, axis=1)
-    champions = pd.Series(best_fitnesses).cummax().to_numpy()
+    best_fitnesses = np.min(avg_fitnesses, axis=1)
+    champions = pd.Series(best_fitnesses).cummin().to_numpy()
 
     # Plot the fitnesses
     plt.figure(figsize=(25, 12))
     plt.plot(champions)
     plt.xlabel("Generation")
     plt.ylabel("Champion")
-    plt.title("Champion fitness over time")
+    plt.title("Champion cost over time for hrt201d")
     plt.savefig(out_path)
     plt.close()
 
@@ -75,7 +75,7 @@ def plot_fitnesses(fitness_log, out_path):
     )
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
-    plt.title("All fitnesses and their average + standard deviation")
+    plt.title("All costs and their average + standard deviation for hrt201d")
     plt.savefig(out_path)
     plt.close()
 
@@ -88,10 +88,9 @@ def plot_genetic_algorithms(fitness_log, out_path):
     
     # Find the sequence of best fitnesses in each generation
     groups = df.groupby(["Meta-Generation", "Population Member", "Generation"])
-    best_fitness_per_population = groups["Fitness"].max().reset_index()
+    best_fitness_per_population = groups["Fitness"].min().reset_index()
     all_fitnesses_in_ga = best_fitness_per_population.groupby(["Meta-Generation", "Population Member"])["Fitness"].apply(list).reset_index()
-    cumulative_best_fitnesses = all_fitnesses_in_ga["Fitness"].apply(lambda x: pd.Series(x).cummax().to_numpy())
-    
+    cumulative_best_fitnesses = all_fitnesses_in_ga["Fitness"].apply(lambda x: pd.Series(x).cummin().to_numpy())
 
     # Plot the fitnesses
     plt.figure(figsize=(25, 12))
@@ -100,8 +99,8 @@ def plot_genetic_algorithms(fitness_log, out_path):
         plt.plot(approx_hours, row)
 
     plt.xlabel("Approximate hours of Synthesis")
-    plt.ylabel("Best fitness encountered")
-    plt.title("Best fitness encountered in each generation")
+    plt.ylabel("Lowest cost encountered")
+    plt.title("Lowest cost encountered in each generation for synthesis on hrt201d")
     plt.savefig(out_path)
     plt.close()
 
