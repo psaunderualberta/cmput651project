@@ -88,21 +88,72 @@ def plot_genetic_algorithms(fitness_log, out_path):
     
     # Find the sequence of best fitnesses in each generation
     groups = df.groupby(["Meta-Generation", "Population Member", "Generation"])
-    best_fitness_per_population = groups["Fitness"].min().reset_index()
-    all_fitnesses_in_ga = best_fitness_per_population.groupby(["Meta-Generation", "Population Member"])["Fitness"].apply(list).reset_index()
-    cumulative_best_fitnesses = all_fitnesses_in_ga["Fitness"].apply(lambda x: pd.Series(x).cummin().to_numpy())
+    best_fitness_per_population = groups[["Fitness", "Unix Time"]].min().reset_index()
+    gb = best_fitness_per_population.groupby(["Meta-Generation", "Population Member"])
+    fitnesses = gb["Fitness"].apply(list).reset_index()
+    unix_timestamps = gb["Unix Time"].apply(np.array).reset_index()
+    timestamps = unix_timestamps["Unix Time"].apply(lambda x: pd.to_datetime(x, unit="s", origin="unix")).reset_index()
+    timestamps = timestamps["Unix Time"].apply(lambda x: x - min(x)).reset_index()
+    cumulative_best_fitnesses = fitnesses["Fitness"].apply(lambda x: pd.Series(x).cummin().to_numpy())
 
     # Plot the fitnesses
     plt.figure(figsize=(25, 12))
-    for row in cumulative_best_fitnesses:
-        approx_hours = np.linspace(0, 1, len(row))
-        plt.plot(approx_hours, row)
+    for x, y in zip(timestamps["Unix Time"], cumulative_best_fitnesses):
+        x = x / np.timedelta64(1, "h")
+        plt.plot(x, y, alpha=1, linewidth=0.7)
 
-    plt.xlabel("Approximate hours of Synthesis")
+    # Average the curves
+    x, y, std = __average_curves(timestamps["Unix Time"], cumulative_best_fitnesses)
+    plt.plot(x / np.timedelta64(1, "h"), y, color="black", linewidth=5, label="Average")
+    plt.fill_between(
+        x / np.timedelta64(1, "h"),
+        y - std,
+        y + std,
+        alpha=0.3,
+        color="black",
+        label="Standard Deviation",
+    )
+
+
+    plt.xlabel("Hours of Synthesis")
     plt.ylabel("Lowest cost encountered")
-    plt.title("Lowest cost encountered in each generation for synthesis on hrt201d")
+    plt.title("Lowest cost encountered in each generation for synthesis on maze2")
+    plt.legend()
     plt.savefig(out_path)
     plt.close()
+
+
+def __average_curves(x, y, step="1s"):
+    """
+    Average the curves, return also the standard deviation.
+    Note that the lengths of all curves is not the same,
+    and the x-values do not necessarily match.
+    'x' is of pandas series of datetimes, y is a list of floats
+    """
+
+    # Resample the curves
+    resampled_x = []
+    resampled_y = []
+    for i, (x_i, y_i) in enumerate(zip(x, y)):
+        df = pd.DataFrame({"x": x_i, "y": y_i})
+        resampled = df.resample(step, on="x")
+        resampled_x.append(resampled.mean().ffill().reset_index()["x"])
+        resampled_y.append(resampled.mean().ffill().reset_index()["y"].astype(float))
+
+    # Concatenate the resampled curves
+    df = pd.DataFrame({
+        "x": pd.concat(resampled_x).reset_index(drop=True),
+        "y": pd.concat(resampled_y).reset_index(drop=True),
+    })
+
+    # Average the curves
+    grouper = pd.Grouper(key="x", freq=step)
+    resampled = df.groupby(grouper)
+    new_x = resampled.mean().reset_index()["x"]
+    new_y = resampled.mean().reset_index()["y"].astype(float)
+    new_std = resampled.std().reset_index()["y"]
+
+    return new_x, new_y, new_std
 
 def main():
     """Plot the fitnesses from the fitness log."""
@@ -119,12 +170,12 @@ def main():
         os.makedirs(plot_path)
 
     # Plot the fitnesses
-    plt.rc('font', size=25)
-    plt.rc('xtick', labelsize=20)
-    plt.rc('ytick', labelsize=20)
-    plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-champion.png"))
-    plot_champions(results, os.path.join(plot_path, f"{file_id}-fitnesses.png"))
-    # plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.png"))
+    plt.rc('font', size=30)
+    plt.rc('xtick', labelsize=25)
+    plt.rc('ytick', labelsize=25)
+    # plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-champion.png"))
+    # plot_champions(results, os.path.join(plot_path, f"{file_id}-fitnesses.png"))
+    plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.png"))
 
 if __name__ == "__main__":
     main()
