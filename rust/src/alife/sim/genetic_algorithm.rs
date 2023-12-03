@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 use crate::alife::search::cycle::{CycleSolver, ProblemCycle};
 use crate::constants::MAX_TREE_SIZE;
@@ -27,7 +27,7 @@ pub struct GeneticAlgorithmResult {
     #[pyo3(get)]
     pub best_fitnesses: Vec<f64>,
     #[pyo3(get)]
-    pub history: Vec<Vec<(String, f64)>>,
+    pub history: Vec<Vec<(String, f64, u64)>>,
 }
 
 #[derive(Debug, Clone)]
@@ -139,6 +139,12 @@ impl GeneticAlgorithm {
                 .map(|heuristic| self.compute_individual(heuristic.clone()))
                 .collect();
 
+            // Get the current unix time
+            let now = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+
             // Add the current population to the history vector
             history.push(
                 self.i_population
@@ -147,6 +153,7 @@ impl GeneticAlgorithm {
                         (
                             individual.heuristic.root().to_string(),
                             individual.fitness(self.baseline_expansions, self.baseline_path_len),
+                            now,
                         )
                     })
                     .collect::<Vec<_>>(),
@@ -170,23 +177,6 @@ impl GeneticAlgorithm {
                     Heuristic::new(mutate_heuristic(heuristic.root(), &self.term_probs))
                 })
                 .collect();
-
-            // // Log the best individuals
-            // iter_count += 1;
-            // if timer.elapsed() > next_log {
-            //     println!("\n### Best Heuristics ###\n");
-            //     for individual in self.best_individuals.iter() {
-            //         println!(
-            //             "Heuristic {:2.2}% expansions of baseline, {:2.2}% path len of baseline: {}",
-            //             100.0 * individual.expansions as f64 / self.baseline_expansions as f64,
-            //             100.0 * individual.path_len as f64 / self.baseline_path_len as f64,
-            //             individual.heuristic.root()
-            //         );
-            //     }
-            //     println!("\n Iterations per second: {}", iter_count as f64 / 100.0);
-            //     iter_count = 0;
-            //     next_log = timer.elapsed() + Duration::from_secs(10);
-            // }
         }
 
         println!("{}", generation_number);
@@ -250,51 +240,6 @@ impl GeneticAlgorithm {
         // return the selected individuals
         selected
     }
-
-    // fn add_individual(&mut self, heuristic: Heuristic) -> Individual {
-    //     // insert only if population does not already contain individual
-    //     let mut individual = Individual {
-    //         heuristic,
-    //         expansions: 0,
-    //         path_len: 0,
-    //     };
-    //     if self.population.contains(&individual) {
-    //         self.population.get(&individual).unwrap().clone()
-    //     } else {
-    //         let mut cycle =
-    //             CycleSolver::from_cycle(self.cycle.clone(), self.map, individual.heuristic.clone());
-    //         cycle.solve_cycle();
-    //         let result = cycle.get_total_expansions_in_cycle();
-    //         individual.expansions = result;
-    //         self.population.insert(individual.clone());
-    //         for i in 0..(self.best_individuals.len() + 1) {
-    //             if result
-    //                 < match self.best_individuals.get(i) {
-    //                     Some(ind) => ind.expansions,
-    //                     None => usize::MAX,
-    //                 }
-    //             {
-    //                 self.best_individuals.insert(i, indual.clone());
-    //                 break;
-    //             }
-    //         }
-    //         if self.best_individuals.len() > MAX_BEST_INDIVIDUALS {
-    //             self.best_individuals.pop();
-    //         }
-    //         if self.population.len() > self.max_population_size {
-    //             if let Some(worst) = self.population.iter().next() {
-    //                 let mut worst = worst;
-    //                 for individual in self.population.iter() {
-    //                     if individual.expansions > worst.expansions {
-    //                         worst = individual;
-    //                     }divi
-    //                 }
-    //                 self.population.remove(&worst.clone());
-    //             }
-    //         }
-    //         individual
-    //     }
-    // }
 }
 
 #[pymethods]

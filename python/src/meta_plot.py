@@ -43,7 +43,7 @@ def plot_champions(fitness_log, out_path):
     plt.plot(champions)
     plt.xlabel("Generation")
     plt.ylabel("Champion")
-    plt.title("Champion cost over time for hrt201d")
+    plt.title("Champion cost over time for maze2")
     plt.savefig(out_path)
     plt.close()
 
@@ -75,7 +75,7 @@ def plot_fitnesses(fitness_log, out_path):
     )
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
-    plt.title("All costs and their average + standard deviation for hrt201d")
+    plt.title("All costs and their average + standard deviation for maze2")
     plt.savefig(out_path)
     plt.close()
 
@@ -122,9 +122,9 @@ def main():
     plt.rc('font', size=25)
     plt.rc('xtick', labelsize=20)
     plt.rc('ytick', labelsize=20)
-    # plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-champion.png"))
-    # plot_champions(results, os.path.join(plot_path, f"{file_id}-fitnesses.png"))
-    plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.png"))
+    plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-champion.png"))
+    plot_champions(results, os.path.join(plot_path, f"{file_id}-fitnesses.png"))
+    # plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.png"))
 
 if __name__ == "__main__":
     main()

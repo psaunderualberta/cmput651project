@@ -27,7 +27,7 @@ def main():
 
     config = {
         "MAP_NAME": "hrt201d",
-        "POPULATION_SIZE": 10,
+        "POPULATION_SIZE": 12,
         "SECONDS_PER_GA": 60 * 60,
         "GA_SEED": 42,
         "MUTATION_PROBABILITY": 0.1,
@@ -44,14 +44,14 @@ def main():
     with open(config["PROB_LOG"], "w") as p_log:
         p_log.write("Generation | Population Index | Term Category | Term | Individual\n")
     with open(config["HISTORY_LOG"], "w") as h_log:
-        h_log.write("Meta-Generation | Population Member | Generation | Heuristic | Fitness\n")
+        h_log.write("Meta-Generation | Population Member | Generation | Heuristic | Fitness | Unix Time\n")
 
     # Get the map & baseline cycle
     rust_map, cycle = get_problems(config["MAP_NAME"])
 
     # Create the population
     population = [
-        ga.random_term_probabilities(False) for _ in range(config["POPULATION_SIZE"])
+        ga.random_term_probabilities(True) for _ in range(config["POPULATION_SIZE"])
     ]
 
     # While the budget has not been reached
@@ -76,7 +76,7 @@ def main():
         # Evaluate the population
         results = [
             ga.genetic_algorithm(
-                rust_map, cycle, probs, config["GA_SEED"], config["SECONDS_PER_GA"]
+                rust_map, cycle, probs, config["GA_SEED"] + np.random.randint(0, 10**6), config["SECONDS_PER_GA"]
             )
             for probs in population
         ]
@@ -85,8 +85,8 @@ def main():
         with open(config["HISTORY_LOG"], "a") as file:
             for pop_i, result in enumerate(results):
                 for gen_i, generation in enumerate(result.history):
-                    for h, f in generation:
-                        file.write(f"{gen_num} | {pop_i} | {gen_i} | \"{h}\" | {f}\n")
+                    for h, f, t in generation:
+                        file.write(f"{gen_num} | {pop_i} | {gen_i} | \"{h}\" | {f} | {t}\n")
 
 
         # Extract the heuristics and fitnesses
