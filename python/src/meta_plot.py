@@ -3,9 +3,12 @@ import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+import scienceplots
 
 FILE_LOCATION = os.path.dirname(os.path.realpath(__file__))
+__aspect_ratio = 6/8
+WIDTH = 3.31314  # width of one column in latex twocolumn
+HEIGHT = WIDTH * __aspect_ratio
 
 
 def extract_data(fitness_log):
@@ -39,7 +42,7 @@ def plot_champions(fitness_log, out_path):
     champions = pd.Series(best_fitnesses).cummin().to_numpy()
 
     # Plot the fitnesses
-    plt.figure(figsize=(25, 12))
+    plt.figure(figsize=(WIDTH, HEIGHT))
     plt.plot(champions)
     plt.xlabel("Generation")
     plt.ylabel("Champion")
@@ -62,7 +65,7 @@ def plot_fitnesses(fitness_log, out_path):
     _, x = np.meshgrid(np.arange(avg_fitnesses.shape[1]), np.arange(avg_fitnesses.shape[0]))
 
     # Plot the fitnesses
-    plt.figure(figsize=(25, 12))
+    plt.figure(figsize=(WIDTH, HEIGHT))
     plt.grid(True)
     plt.scatter(x, avg_fitnesses, alpha=0.5, s=2)
     plt.plot(avg_fitness_by_gen, color="black")
@@ -97,14 +100,14 @@ def plot_genetic_algorithms(fitness_log, out_path):
     cumulative_best_fitnesses = fitnesses["Fitness"].apply(lambda x: pd.Series(x).cummin().to_numpy())
 
     # Plot the fitnesses
-    plt.figure(figsize=(25, 12))
+    plt.figure(figsize=(WIDTH, HEIGHT))
     for x, y in zip(timestamps["Unix Time"], cumulative_best_fitnesses):
         x = x / np.timedelta64(1, "h")
-        plt.plot(x, y, alpha=1, linewidth=0.7)
+        plt.plot(x, y, alpha=1, linewidth=0.5)
 
     # Average the curves
     x, y, std = __average_curves(timestamps["Unix Time"], cumulative_best_fitnesses)
-    plt.plot(x / np.timedelta64(1, "h"), y, color="black", linewidth=5, label="Average")
+    plt.plot(x / np.timedelta64(1, "h"), y, linewidth=1.5, color="black", label="Average")
     plt.fill_between(
         x / np.timedelta64(1, "h"),
         y - std,
@@ -117,7 +120,7 @@ def plot_genetic_algorithms(fitness_log, out_path):
 
     plt.xlabel("Hours of Synthesis")
     plt.ylabel("Lowest cost encountered")
-    plt.title("Lowest cost encountered in each generation for synthesis on maze2")
+    plt.title("Lowest cost encountered over time for maze2")
     plt.legend()
     plt.savefig(out_path)
     plt.close()
@@ -170,12 +173,10 @@ def main():
         os.makedirs(plot_path)
 
     # Plot the fitnesses
-    plt.rc('font', size=30)
-    plt.rc('xtick', labelsize=25)
-    plt.rc('ytick', labelsize=25)
+    plt.style.use('science')
     # plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-champion.png"))
     # plot_champions(results, os.path.join(plot_path, f"{file_id}-fitnesses.png"))
-    plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.png"))
+    plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.pdf"))
 
 if __name__ == "__main__":
     main()
