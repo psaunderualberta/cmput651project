@@ -46,7 +46,7 @@ def plot_champions(fitness_log, out_path):
     plt.plot(champions)
     plt.xlabel("Generation")
     plt.ylabel("Champion")
-    plt.title("Champion cost over time for maze2")
+    plt.title("Champion cost over time for Meta-GA on hrt201d")
     plt.savefig(out_path)
     plt.close()
 
@@ -67,7 +67,7 @@ def plot_fitnesses(fitness_log, out_path):
     # Plot the fitnesses
     plt.figure(figsize=(WIDTH, HEIGHT))
     plt.grid(True)
-    plt.scatter(x, avg_fitnesses, alpha=0.5, s=2)
+    plt.scatter(x, avg_fitnesses, alpha=0.5, linewidths=0.5, s=1)
     plt.plot(avg_fitness_by_gen, color="black")
     plt.fill_between(
         np.arange(avg_fitness_by_gen.shape[0]),
@@ -78,7 +78,7 @@ def plot_fitnesses(fitness_log, out_path):
     )
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
-    plt.title("All costs and their average + standard deviation for maze2")
+    plt.title("All fitnesses for Meta-GA on hrt201d")
     plt.savefig(out_path)
     plt.close()
 
@@ -174,9 +174,9 @@ def main():
 
     # Plot the fitnesses
     plt.style.use('science')
-    # plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-champion.png"))
-    # plot_champions(results, os.path.join(plot_path, f"{file_id}-fitnesses.png"))
-    plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.pdf"))
+    plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-fitnesses.pdf"))
+    plot_champions(results, os.path.join(plot_path, f"{file_id}-champion.pdf"))
+    # plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.pdf"))
 
 if __name__ == "__main__":
     main()

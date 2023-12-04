@@ -28,14 +28,14 @@ def main():
     config = {
         "MAP_NAME": "hrt201d",
         "POPULATION_SIZE": 12,
-        "SECONDS_PER_GA": 60 * 60,
+        "SECONDS_PER_GA": 60,
         "GA_SEED": 42,
         "MUTATION_PROBABILITY": 0.1,
         "DEBUG": False,
         "BEST_LOG": f"../python/out/{prefix}-data.csv",
         "PROB_LOG": f"../python/out/{prefix}-log.csv",
         "HISTORY_LOG": f"../python/out/{prefix}-history.csv",
-        "TIMEOUT": 1,
+        "TIMEOUT": 12 * 60 * 60,
     }
 
     # Create log files
@@ -51,7 +51,7 @@ def main():
 
     # Create the population
     population = [
-        ga.random_term_probabilities(True) for _ in range(config["POPULATION_SIZE"])
+        ga.random_term_probabilities(False) for _ in range(config["POPULATION_SIZE"])
     ]
 
     # While the budget has not been reached
@@ -76,7 +76,7 @@ def main():
         # Evaluate the population
         results = [
             ga.genetic_algorithm(
-                rust_map, cycle, probs, config["GA_SEED"] + np.random.randint(0, 10**6), config["SECONDS_PER_GA"]
+                rust_map, cycle, probs, config["GA_SEED"], config["SECONDS_PER_GA"]
             )
             for probs in population
         ]
