@@ -46,7 +46,7 @@ def plot_champions(fitness_log, out_path):
     plt.plot(champions)
     plt.xlabel("Generation")
     plt.ylabel("Champion")
-    plt.title("Champion cost over time for Meta-GA on hrt201d")
+    plt.title("Champion cost over time for Meta-GA on maze2")
     plt.savefig(out_path)
     plt.close()
 
@@ -78,7 +78,7 @@ def plot_fitnesses(fitness_log, out_path):
     )
     plt.xlabel("Generation")
     plt.ylabel("Fitness")
-    plt.title("All fitnesses for Meta-GA on hrt201d")
+    plt.title("All fitnesses for Meta-GA on maze2")
     plt.savefig(out_path)
     plt.close()
 
