@@ -120,7 +120,7 @@ def plot_genetic_algorithms(fitness_log, out_path):
 
     plt.xlabel("Hours of Synthesis")
     plt.ylabel("Lowest cost encountered")
-    plt.title("Lowest cost encountered over time for maze2")
+    plt.title("12 Different Mutation Probabilities : hrt201d")
     plt.legend()
     plt.savefig(out_path)
     plt.close()
@@ -174,9 +174,9 @@ def main():
 
     # Plot the fitnesses
     plt.style.use('science')
-    plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-fitnesses.pdf"))
-    plot_champions(results, os.path.join(plot_path, f"{file_id}-champion.pdf"))
-    # plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.pdf"))
+    # plot_fitnesses(results, os.path.join(plot_path, f"{file_id}-fitnesses.pdf"))
+    # plot_champions(results, os.path.join(plot_path, f"{file_id}-champion.pdf"))
+    plot_genetic_algorithms(genetic_algorithms, os.path.join(plot_path, f"{file_id}-genetic_algorithms.pdf"))
 
 if __name__ == "__main__":
     main()
